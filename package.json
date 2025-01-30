@@ -41,6 +41,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.0",
+    "flexsearch": "^0.7.43",
     "katex": "^0.16.21",
     "lexical": "^0.23.1",
     "lodash-es": "^4.17.21",
@@ -52,8 +53,7 @@
     "react-resizable-panels": "^2.1.7",
     "sonner": "^1.7.3",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7",
-    "usehooks-ts": "^3.1.0"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.12",

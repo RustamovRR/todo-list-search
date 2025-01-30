@@ -107,7 +107,7 @@ export function Plugins({}) {
         <MarkdownShortcutPlugin transformers={MARKDOWN_TRANSFORMERS} />
 
         <TabFocusPlugin />
-        <AutocompletePlugin />
+        {/* <AutocompletePlugin /> */}
         <AutoLinkPlugin />
         <LinkPlugin />
 

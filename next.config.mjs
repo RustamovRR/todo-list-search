@@ -5,6 +5,7 @@ const nextConfig = {
     extensionAlias: {
       '.js': ['.tsx', '.ts', '.jsx', '.js'],
     },
+    serverActions: true,
     turbo: {
       resolveAlias: {
         // Turbopack does not support standard ESM import paths yet

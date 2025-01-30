@@ -1,9 +1,6 @@
-import EditorLexical from '@/components/shared/EditorLexical'
-import EditorQuill from '@/components/shared/EditorQuill'
 import SearchSection from '@/components/shared/SearchSection'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
-import EditorApp from './EditorApp'
-import { Editor } from '@/components/editor'
+import Editor from '@/components/editor'
 
 export default function Home() {
   return (
@@ -16,9 +13,6 @@ export default function Home() {
       <main className="w-full flex-grow">
         <ResizablePanelGroup direction="horizontal">
           <ResizablePanel defaultSize={60}>
-            {/* <EditorQuill /> */}
-            {/* <EditorLexical /> */}
-            {/* <EditorApp /> */}
             <Editor />
           </ResizablePanel>
           <ResizableHandle />

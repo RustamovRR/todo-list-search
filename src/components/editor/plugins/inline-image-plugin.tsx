@@ -6,7 +6,7 @@
  *
  */
 import * as React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { JSX, useEffect, useRef, useState } from 'react'
 
 // import '../nodes/inline-image-node.css';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
