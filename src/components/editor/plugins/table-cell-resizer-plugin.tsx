@@ -6,7 +6,7 @@
  *
  */
 import * as React from 'react'
-import { MouseEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { JSX, MouseEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useLexicalEditable } from '@lexical/react/useLexicalEditable'

@@ -28,7 +28,7 @@ export function useEditorModal(): [
     if (modalContent === null) {
       return null
     }
-    const { title, content, closeOnClickOutside } = modalContent
+    const { title, content } = modalContent
     return (
       <Dialog open={true} onOpenChange={onClose}>
         <DialogContent>

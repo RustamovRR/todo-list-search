@@ -40,12 +40,12 @@ export class EmojiNode extends TextNode {
     return dom
   }
 
-  updateDOM(prevNode: TextNode, dom: HTMLElement, config: EditorConfig): boolean {
+  updateDOM(prevNode: EmojiNode, dom: HTMLElement, config: EditorConfig): boolean {
     const inner = dom.firstChild
     if (inner === null) {
       return true
     }
-    super.updateDOM(prevNode, inner as HTMLElement, config)
+    super.updateDOM(prevNode as any, inner as HTMLElement, config)
     return false
   }
 

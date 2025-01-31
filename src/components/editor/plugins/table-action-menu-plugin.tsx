@@ -6,7 +6,7 @@
  *
  */
 import * as React from 'react'
-import { ReactPortal, useCallback, useEffect, useRef, useState } from 'react'
+import { JSX, ReactPortal, useCallback, useEffect, useRef, useState } from 'react'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { useLexicalEditable } from '@lexical/react/useLexicalEditable'
@@ -226,7 +226,7 @@ function TableActionMenu({
 
         const tableObserver = getTableObserverFromTableElement(tableElement)
         if (tableObserver !== null) {
-          tableObserver.clearHighlight()
+          tableObserver.$clearHighlight()
         }
 
         tableNode.markDirty()

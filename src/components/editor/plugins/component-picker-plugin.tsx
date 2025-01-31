@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import { useCallback, useMemo, useState } from 'react'
+import { JSX, useCallback, useMemo, useState } from 'react'
 
 import dynamic from 'next/dynamic'
 
@@ -54,9 +54,10 @@ import {
 import { useEditorModal } from '../hooks/use-modal'
 import { INSERT_COLLAPSIBLE_COMMAND } from './collapsible-plugin'
 import { InsertEquationDialog } from './equations-plugin'
-import { INSERT_IMAGE_COMMAND, InsertImageDialog } from './images-plugin'
+import { InsertImageDialog } from './images-plugin'
 import { InsertLayoutDialog } from './layout-plugin'
 import { InsertTableDialog } from './table-plugin'
+import { Command, CommandList, CommandGroup, CommandItem } from '@/components/ui/command'
 
 const LexicalTypeaheadMenuPlugin = dynamic(() => import('./default/lexical-typeahead-menu-plugin'), { ssr: false })
 

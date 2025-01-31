@@ -6,7 +6,7 @@
  *
  */
 import * as React from 'react'
-import { useState } from 'react'
+import { JSX, useState } from 'react'
 import { useEffect } from 'react'
 
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'

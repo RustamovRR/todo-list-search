@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import { Dispatch, LegacyRef, useCallback, useEffect, useRef, useState } from 'react'
+import { Dispatch, JSX, LegacyRef, useCallback, useEffect, useRef, useState } from 'react'
 import * as React from 'react'
 
 import { $isCodeHighlightNode } from '@lexical/code'

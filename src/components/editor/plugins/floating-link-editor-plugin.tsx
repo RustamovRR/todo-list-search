@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import { Dispatch, useCallback, useEffect, useRef, useState } from 'react'
+import { Dispatch, JSX, useCallback, useEffect, useRef, useState } from 'react'
 import * as React from 'react'
 
 import { $createLinkNode, $isAutoLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND } from '@lexical/link'
