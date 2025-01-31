@@ -6,7 +6,7 @@
  *
  */
 import * as React from 'react'
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { JSX, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import { HashtagNode } from '@lexical/hashtag'
 import { LinkNode } from '@lexical/link'

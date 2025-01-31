@@ -23,7 +23,7 @@ export class SearchEngine {
   }
 
   addDocuments(documents: any[]) {
-    documents.forEach((doc) => {
+    documents?.forEach((doc) => {
       this.documents.set(doc.id, doc)
       this.index.add({
         id: doc.id,

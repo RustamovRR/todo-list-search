@@ -16,7 +16,7 @@ import { debounce } from 'lodash-es'
 import { toast } from 'sonner'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import dynamic from 'next/dynamic'
+import { documentDB } from '@/lib/dib'
 
 interface Document {
   id?: string
@@ -36,67 +36,88 @@ const editorConfig: InitialConfigType = {
 const Editor = ({
   editorState,
   editorSerializedState,
-  onChange,
-  onSerializedChange,
 }: {
   editorState?: EditorState
   editorSerializedState?: SerializedEditorState
-  onChange?: (editorState: EditorState) => void
-  onSerializedChange?: (editorSerializedState: SerializedEditorState) => void
 }) => {
-  const [document, setDocument] = useState<Document>({
+  const [documentFile, setDocumentFile] = useState<Document>({
     title: '',
     content: '',
   })
   const [isSaving, setIsSaving] = useState(false)
 
+  // Save document
+  const saveDocument = async (doc: Document) => {
+    if (!doc.title.trim() || !doc.content.trim()) {
+      return
+    }
+
+    try {
+      setIsSaving(true)
+
+      const savedDoc = doc.id ? await documentDB.updateDocument(doc.id, doc) : await documentDB.createDocument(doc)
+
+      setDocumentFile((prev) => ({ ...prev, id: savedDoc.id }))
+      toast.success('Saved successfully')
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('Failed to save document')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Debounced save
   const debouncedSave = useCallback(
-    debounce(async (doc: Document) => {
-      try {
-        setIsSaving(true)
-        const url = doc.id ? `/api/documents/${doc.id}` : '/api/documents'
-
-        const method = doc.id ? 'PUT' : 'POST'
-
-        const response = await fetch(url, {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(doc),
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to save')
-        }
-
-        const result = await response.json()
-
-        if (!doc.id) {
-          setDocument((prev) => ({ ...prev, id: result.id }))
-        }
-
-        toast.success('Saved successfully')
-      } catch (error) {
-        console.error('Save error:', error)
-        toast.error('Failed to save')
-      } finally {
-        setIsSaving(false)
-      }
-    }, 1000),
+    debounce((doc: Document) => saveDocument(doc), 1000),
     [],
   )
 
-  const handleChange = useCallback(
+  // Editor changes
+  const handleEditorChange = useCallback(
     (editorState: any) => {
       editorState.read(() => {
         const content = $getRoot().getTextContent()
-        setDocument((prev) => ({ ...prev, content }))
-        debouncedSave({ ...document, content })
+        setDocumentFile((prev) => {
+          const newDoc = { ...prev, content }
+          debouncedSave(newDoc)
+          return newDoc
+        })
       })
     },
-    [document, debouncedSave],
+    [debouncedSave],
   )
+
+  // Export as .doc file
+  const exportAsDoc = async () => {
+    try {
+      const { Document, Paragraph, Packer } = await import('docx')
+
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              new Paragraph({
+                text: documentFile.content,
+              }),
+            ],
+          },
+        ],
+      })
+
+      const blob = await Packer.toBlob(doc)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${document.title || 'document'}.docx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Failed to export document')
+    }
+  }
 
   return (
     <div className="m-4 overflow-hidden h-full rounded-lg border bg-background shadow">
@@ -104,10 +125,13 @@ const Editor = ({
         value={document.title}
         onChange={(e) => {
           const title = e.target.value
-          setDocument((prev) => ({ ...prev, title }))
-          debouncedSave({ ...document, title })
+          setDocumentFile((prev) => {
+            const newDoc = { ...prev, title }
+            debouncedSave(newDoc)
+            return newDoc
+          })
         }}
-        placeholder="Enter title..."
+        placeholder="Enter document title..."
         className="mb-4"
       />
 
@@ -123,14 +147,17 @@ const Editor = ({
             <FloatingLinkContext>
               <Plugins />
 
-              <OnChangePlugin ignoreSelectionChange={true} onChange={handleChange} />
+              <OnChangePlugin ignoreSelectionChange={true} onChange={handleEditorChange} />
             </FloatingLinkContext>
           </SharedAutocompleteContext>
         </TooltipProvider>
       </LexicalComposer>
 
-      <div className="flex items-center gap-2 mt-4">
-        <Button variant="outline" onClick={() => debouncedSave(document)} disabled={isSaving}>
+      <div className="flex justify-end gap-2 mt-4">
+        <Button variant="outline" onClick={exportAsDoc} disabled={isSaving || !documentFile.content}>
+          Export as .docx
+        </Button>
+        <Button onClick={() => saveDocument(documentFile)} disabled={isSaving}>
           {isSaving ? 'Saving...' : 'Save'}
         </Button>
       </div>

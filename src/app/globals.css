@@ -77,6 +77,25 @@ body {
   }
 }
 
+/* Editor styles */
+.ContentEditable__root {
+  position: relative;
+  outline: 0;
+  tab-size: 1;
+  caret-color: #444;
+}
+
+.ContentEditable__root p {
+  margin: 0;
+  margin-bottom: 0;
+  padding: 0;
+  line-height: 1.5;
+}
+
+.ContentEditable__root p:not(:first-child) {
+  margin-top: 4px;
+}
+
 /* components/shared/editor/styles.css */
 .editor-container {
   background: #fff;

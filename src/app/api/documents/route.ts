@@ -1,16 +1,7 @@
 // app/api/documents/route.ts
 import { db } from '@/lib/firebase'
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  getDocs,
-  query,
-  orderBy,
-  serverTimestamp,
-} from '@firebase/firestore'
+import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from '@firebase/firestore'
+import { NextApiRequest, NextApiResponse } from 'next'
 import { NextResponse } from 'next/server'
 
 // Yangi document yaratish
@@ -38,6 +29,7 @@ export async function POST(req: Request) {
 // Barcha dokumentlarni olish
 export async function GET() {
   try {
+    cons
     const q = query(collection(db, 'documents'), orderBy('updatedAt', 'desc'))
 
     const querySnapshot = await getDocs(q)

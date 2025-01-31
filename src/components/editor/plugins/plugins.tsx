@@ -26,14 +26,12 @@ import { ShareContentPlugin } from './actions/share-content-plugin'
 import { SpeechToTextPlugin } from './actions/speech-to-text-plugin'
 import { TreeViewPlugin } from './actions/tree-view-plugin'
 import { AutoLinkPlugin } from './auto-link-plugin'
-import { AutocompletePlugin } from './autocomplete-plugin'
 import { CodeActionMenuPlugin } from './code-action-menu-plugin'
 import { CodeHighlightPlugin } from './code-highlight-plugin'
 import { CollapsiblePlugin } from './collapsible-plugin'
 import { ComponentPickerMenuPlugin } from './component-picker-plugin'
 import { ContextMenuPlugin } from './context-menu-plugin'
 import { DragDropPastePlugin } from './drag-drop-paste-plugin'
-import { DraggableBlockPlugin } from './draggable-block-plugin'
 import { EmojiPickerPlugin } from './emoji-picker-plugin'
 import { EmojisPlugin } from './emojis-plugin'
 import { EquationsPlugin } from './equations-plugin'
@@ -89,7 +87,6 @@ export function Plugins({}) {
         <HistoryPlugin />
 
         <MentionsPlugin />
-        <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
         <KeywordsPlugin />
         <EmojisPlugin />
         <ImagesPlugin />
