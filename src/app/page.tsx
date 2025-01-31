@@ -6,7 +6,7 @@ import Script from 'next/script'
 
 export default function Home() {
   const YM_ID = process.env.NEXT_PUBLIC_YM_ID
-  
+
   return (
     <div className="flex min-h-screen h-screen flex-col items-center justify-between">
       <Head>
@@ -15,6 +15,7 @@ export default function Home() {
           <meta name="yandex-verification" content="0c91a9b588bee8d3" />
         </title>
       </Head>
+
       {/* Yandex Metrica */}
       <Script
         id="ym-script"
