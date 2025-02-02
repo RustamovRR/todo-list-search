@@ -63,7 +63,7 @@ export function ToolbarPlugin() {
       showModal={showModal}
     >
       {modal}
-      <div className="vertical-align-middle sticky top-0 z-10 flex gap-2 overflow-auto border-b p-1">
+      <div className="flex items-center sticky top-0 z-10 gap-2 overflow-auto border-b p-1 pb-4 pt-0">
         <HistoryToolbarPlugin />
         <Separator orientation="vertical" className="h-8" />
         <BlockFormatDropDown>
@@ -88,18 +88,11 @@ export function ToolbarPlugin() {
             <FontFormatToolbarPlugin format="italic" />
             <FontFormatToolbarPlugin format="underline" />
             <FontFormatToolbarPlugin format="strikethrough" />
-
-            <Separator orientation="vertical" className="h-8" />
-
-            <SubSuperToolbarPlugin />
             <LinkToolbarPlugin />
 
             <Separator orientation="vertical" className="h-8" />
-
+            <SubSuperToolbarPlugin />
             <ClearFormattingToolbarPlugin />
-
-            <Separator orientation="vertical" className="h-8" />
-
             <FontColorToolbarPlugin />
             <FontBackgroundToolbarPlugin />
 

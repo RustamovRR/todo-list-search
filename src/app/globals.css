@@ -253,3 +253,74 @@ body {
   overflow-x: auto;
   position: relative;
 }
+
+/* Search styles */
+mark {
+  background-color: #fef08a;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.search-result-highlight {
+  animation: highlight-fade 3s ease-out;
+}
+
+@keyframes highlight-fade {
+  0% {
+    background-color: #fef08a;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+/* Editor highlight */
+.highlight {
+  background-color: #fef08a;
+  transition: background-color 0.3s ease-out;
+}
+
+/* Search highlight styles */
+/* Search highlight styles */
+.search-match {
+  background-color: #fef9c3; /* Tailwind: bg-yellow-100 */
+  border-radius: 0.125rem; /* Tailwind: rounded-sm */
+  scroll-margin-top: 1rem; /* Tailwind: scroll-mt-4 */
+  padding: 0;
+  transition: all 0.3s ease-in-out; /* Tailwind: transition-all duration-300 */
+}
+
+.dark .search-match {
+  background-color: rgba(146, 64, 14, 0.5); /* Tailwind: dark:bg-yellow-900/50 */
+}
+
+.search-match-focused {
+  background-color: #3b82f6; /* Tailwind: bg-blue-500 */
+  color: white; /* Tailwind: text-white */
+  transform: scale(1.1); /* Tailwind: scale-110 */
+  border-radius: 0.125rem; /* Tailwind: rounded-sm */
+  box-shadow: 0 0 0 2px #60a5fa; /* Tailwind: ring-2 ring-blue-400 */
+}
+
+.dark .search-match-focused {
+  background-color: #2563eb; /* Tailwind: dark:bg-blue-600 */
+  box-shadow: 0 0 0 2px #3b82f6; /* Tailwind: dark:ring-blue-500 */
+}
+
+/* Animation for search highlight */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.15);
+  }
+}
+
+.search-match-focused {
+  animation: pulse 20s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

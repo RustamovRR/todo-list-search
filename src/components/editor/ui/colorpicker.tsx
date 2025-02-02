@@ -1,10 +1,3 @@
-/**
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
 import * as React from 'react'
 
 import { HexColorPicker } from 'react-colorful'
@@ -37,7 +30,6 @@ export default function ColorPicker({
       <PopoverTrigger asChild disabled={disabled}>
         <Button size={'sm'} variant={'outline'} className="flex items-center gap-1 px-2" {...rest}>
           <span className="size-4 rounded-full">{icon}</span>
-          {/* <ChevronDownIcon className='size-4'/> */}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">

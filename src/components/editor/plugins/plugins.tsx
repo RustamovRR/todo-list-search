@@ -50,10 +50,26 @@ import { TableCellResizerPlugin } from './table-cell-resizer-plugin'
 import { TableHoverActionsPlugin } from './table-hover-actions-plugin'
 import { ToolbarPlugin } from './toolbar/toolbar-plugin'
 
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { useEffect } from 'react'
+import { LexicalEditor } from 'lexical'
+
 const maxLength = Infinity
 
-export function Plugins({}) {
+interface PluginsProps {
+  setEditor?: (editor: LexicalEditor) => void
+}
+
+export function Plugins({ setEditor }: PluginsProps) {
+  const [editor] = useLexicalComposerContext()
   const [floatingAnchorElem, setFloatingAnchorElem] = useState<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (setEditor) {
+      console.log('🔌 Setting editor reference in Plugins')
+      setEditor(editor)
+    }
+  }, [editor, setEditor])
 
   const onRef = (_floatingAnchorElem: HTMLDivElement) => {
     if (_floatingAnchorElem !== null) {
@@ -104,7 +120,6 @@ export function Plugins({}) {
         <MarkdownShortcutPlugin transformers={MARKDOWN_TRANSFORMERS} />
 
         <TabFocusPlugin />
-        {/* <AutocompletePlugin /> */}
         <AutoLinkPlugin />
         <LinkPlugin />
 

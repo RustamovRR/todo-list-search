@@ -4,10 +4,9 @@ import { $isTableSelection } from '@lexical/table'
 import { $isRangeSelection, BaseSelection, FORMAT_TEXT_COMMAND } from 'lexical'
 import { SubscriptIcon, SuperscriptIcon } from 'lucide-react'
 
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-
 import { useToolbarContext } from '../../context/toolbar-context'
 import { useUpdateToolbarHandler } from '../../hooks/use-update-toolbar'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 export function SubSuperToolbarPlugin() {
   const { activeEditor } = useToolbarContext()
