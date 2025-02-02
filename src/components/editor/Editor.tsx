@@ -7,7 +7,6 @@ import {
   $getSelection,
   EditorState,
   LexicalEditor,
-  SerializedEditorState,
   $createParagraphNode,
   $createTextNode,
   PASTE_COMMAND,
@@ -21,10 +20,10 @@ import { Plugins } from './plugins/plugins'
 import { editorTheme } from './themes/editor-theme'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { debounce } from 'lodash-es'
-import { toast } from 'sonner'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { documentDB } from '@/lib/db'
+import { toast } from '@/hooks/use-toast'
 
 interface Document {
   id?: string
@@ -56,7 +55,6 @@ const Editor = () => {
   const [isSaving, setIsSaving] = useState(false)
   const editorRef = useRef<LexicalEditor | null>(null)
 
- 
   // Editor reference'ni saqlash
   const handleEditorRef = useCallback((editor: LexicalEditor) => {
     console.log('🔗 Editor reference received')
@@ -112,10 +110,18 @@ const Editor = () => {
       })
 
       setDocumentFile((prev) => ({ ...prev, id: savedDoc.id }))
-      toast.success('Saved successfully')
+
+      toast({
+        title: 'Success',
+        description: 'Saved successfully',
+      })
     } catch (error) {
       console.error('❌ Save Error:', error)
-      toast.error('Failed to save document')
+      toast({
+        title: 'Error',
+        description: 'Failed to save document',
+        variant: 'destructive',
+      })
     } finally {
       setIsSaving(false)
     }
@@ -199,45 +205,13 @@ const Editor = () => {
       return doc
     } catch (error) {
       console.error('❌ Error loading document:', error)
-      toast.error('Failed to load document')
+      toast({
+        title: 'Error',
+        description: 'Failed to load document',
+        variant: 'destructive',
+      })
     }
   }, [])
-
-  // Export as .docx file
-  const exportAsDoc = async () => {
-    try {
-      const { Document, Paragraph, Packer } = await import('docx')
-
-      const doc = new Document({
-        sections: [
-          {
-            properties: {},
-            children: [
-              new Paragraph({
-                text: documentFile.title,
-              }),
-              new Paragraph({
-                text: documentFile.content,
-              }),
-            ],
-          },
-        ],
-      })
-
-      const buffer = await Packer.toBlob(doc)
-      const url = URL.createObjectURL(buffer)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${documentFile.title || 'document'}.docx`
-      link.click()
-      URL.revokeObjectURL(url)
-
-      toast.success('Document exported successfully')
-    } catch (error) {
-      console.error('Export error:', error)
-      toast.error('Failed to export document')
-    }
-  }
 
   // Handle search result click
   useEffect(() => {
@@ -307,7 +281,11 @@ const Editor = () => {
         }, 100)
       } catch (error) {
         console.error('❌ Error Opening Document:', error)
-        toast.error('Failed to open document')
+        toast({
+          title: 'Error',
+          description: 'Failed to open document',
+          variant: 'destructive',
+        })
       }
     }
 
@@ -331,9 +309,6 @@ const Editor = () => {
             className="max-w-sm"
           />
           <div className="flex items-center gap-2 ml-auto">
-            <Button variant="outline" onClick={exportAsDoc} disabled={isSaving || !documentFile.content}>
-              Export as .docx
-            </Button>
             <Button onClick={() => saveDocument(documentFile)} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save'}
             </Button>

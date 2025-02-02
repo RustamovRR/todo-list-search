@@ -20,11 +20,7 @@ import { CharacterLimitPlugin } from './actions/character-limit-plugin'
 import { ClearEditorActionPlugin } from './actions/clear-editor-plugin'
 import { EditModeTogglePlugin } from './actions/edit-mode-toggle-plugin'
 import { ImportExportPlugin } from './actions/import-export-plugin'
-import { MarkdownTogglePlugin } from './actions/markdown-toggle-plugin'
 import { MaxLengthPlugin } from './actions/max-length-plugin'
-import { ShareContentPlugin } from './actions/share-content-plugin'
-import { SpeechToTextPlugin } from './actions/speech-to-text-plugin'
-import { TreeViewPlugin } from './actions/tree-view-plugin'
 import { AutoLinkPlugin } from './auto-link-plugin'
 import { CodeActionMenuPlugin } from './code-action-menu-plugin'
 import { CodeHighlightPlugin } from './code-highlight-plugin'
@@ -137,16 +133,12 @@ export function Plugins({ setEditor }: PluginsProps) {
         <MaxLengthPlugin maxLength={maxLength} />
         <CharacterLimitPlugin maxLength={maxLength} charset="UTF-16" />
         <div className="flex justify-end">
-          <SpeechToTextPlugin />
-          <ShareContentPlugin />
           <ImportExportPlugin />
-          <MarkdownTogglePlugin shouldPreserveNewLinesInMarkdown={true} />
           <EditModeTogglePlugin />
           <>
             <ClearEditorActionPlugin />
             <ClearEditorPlugin />
           </>
-          <TreeViewPlugin />
         </div>
       </div>
     </div>
