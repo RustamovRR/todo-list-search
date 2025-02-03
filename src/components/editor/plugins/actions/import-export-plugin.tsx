@@ -1,12 +1,14 @@
-import { exportFile, importFile } from '@lexical/file'
+import { importFile } from '@lexical/file'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $createParagraphNode, $createTextNode, $getRoot } from 'lexical'
+import { $createParagraphNode, $createTextNode, $getRoot, $isRootNode } from 'lexical'
 import { DownloadIcon, LoaderIcon, UploadIcon } from 'lucide-react'
 import mammoth from 'mammoth'
 import { useState } from 'react'
 import { pdfjs, Document, Page } from 'react-pdf'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
+import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx'
+import { saveAs } from 'file-saver'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -23,6 +25,7 @@ export function ImportExportPlugin() {
   const [totalPages, setTotalPages] = useState(0)
   const [currentPage, setCurrentPage] = useState(0)
   const [importStatus, setImportStatus] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -144,6 +147,80 @@ export function ImportExportPlugin() {
     }
   }
 
+  const exportToDocx = async () => {
+    try {
+      setIsLoading(true)
+      setIsExporting(true)
+      setImportStatus('Converting document to DOCX format...')
+      setProgress(30)
+
+      const editorState = editor.getEditorState()
+      const docx = new DocxDocument({
+        sections: [
+          {
+            properties: {},
+            children: [],
+          },
+        ],
+      })
+
+      editorState.read(() => {
+        const root = $getRoot()
+        const children = root.getChildren()
+
+        const docxParagraphs = children
+          .map((node) => {
+            if ($isRootNode(node)) return null
+
+            const textContent = node.getTextContent()
+            return new Paragraph({
+              children: [
+                new TextRun({
+                  text: textContent,
+                }),
+              ],
+            })
+          })
+          .filter(Boolean)
+
+        docx.addSection({
+          children: docxParagraphs,
+        })
+      })
+
+      setProgress(60)
+      setImportStatus('Generating DOCX file...')
+
+      const buffer = await Packer.toBuffer(docx)
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      })
+
+      setProgress(90)
+      setImportStatus('Saving file...')
+
+      saveAs(blob, `Document_${new Date().toISOString()}.docx`)
+
+      setProgress(100)
+      toast({
+        title: 'Success',
+        description: 'Document exported as DOCX successfully',
+      })
+    } catch (error) {
+      console.error('Export error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to export document as DOCX',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsLoading(false)
+      setIsExporting(false)
+      setProgress(0)
+      setImportStatus('')
+    }
+  }
+
   const handleImport = () => {
     const input = document.createElement('input')
     input.type = 'file'
@@ -166,12 +243,12 @@ export function ImportExportPlugin() {
       <Dialog open={isLoading} onOpenChange={setIsLoading}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Importing Document</DialogTitle>
+            <DialogTitle>{isExporting ? 'Exporting Document' : 'Importing Document'}</DialogTitle>
             <DialogDescription>{importStatus}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
             <Progress value={progress} className="w-full" />
-            {totalPages > 0 && (
+            {!isExporting && totalPages > 0 && (
               <p className="text-sm text-muted-foreground text-center">
                 Page {currentPage} of {totalPages}
               </p>
@@ -191,32 +268,29 @@ export function ImportExportPlugin() {
             className="p-2"
             disabled={isLoading}
           >
-            {isLoading ? <LoaderIcon className="size-4 animate-spin" /> : <UploadIcon className="size-4" />}
+            {isLoading && !isExporting ? <LoaderIcon className="size-4 animate-spin" /> : <UploadIcon className="size-4" />}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{isLoading ? 'Importing...' : 'Import Content (.docx, .pdf, .lexical)'}</TooltipContent>
+        <TooltipContent>
+          {isLoading && !isExporting ? 'Importing...' : 'Import Content (.docx, .pdf)'}
+        </TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             variant={'ghost'}
-            onClick={() =>
-              exportFile(editor, {
-                fileName: `Document ${new Date().toISOString()}`,
-                source: 'Editor',
-              })
-            }
+            onClick={exportToDocx}
             title="Export"
-            aria-label="Export editor state to JSON"
+            aria-label="Export as DOCX"
             size={'sm'}
             className="p-2"
             disabled={isLoading}
           >
-            <DownloadIcon className="size-4" />
+            {isLoading && isExporting ? <LoaderIcon className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>Export Content</TooltipContent>
+        <TooltipContent>{isLoading && isExporting ? 'Exporting...' : 'Export as DOCX'}</TooltipContent>
       </Tooltip>
     </>
   )

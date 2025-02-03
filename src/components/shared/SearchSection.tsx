@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader } from '../ui/dialog'
 import { DialogTitle } from '@radix-ui/react-dialog'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
+import { useSearchProgress } from '@/hooks/use-search-progress'
 
 interface SearchResult {
   id: string
@@ -27,7 +28,6 @@ interface SearchResult {
 export default function SearchSection() {
   const [searchTerm, setSearchTerm] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
@@ -36,29 +36,23 @@ export default function SearchSection() {
   const [totalMatches, setTotalMatches] = useState(0)
   const previewRef = useRef<HTMLDivElement>(null)
 
-  const handleSearch = debounce(async (term: string) => {
-    console.log('🔍 Search Term:', {
-      term,
-      length: term.length,
-      timestamp: new Date().toISOString(),
-    })
+  const { isLoading, progress, status, currentPage, totalPages, startLoading, updateProgress, updatePages, reset } =
+    useSearchProgress()
 
+  const handleSearch = debounce(async (term: string) => {
     if (!term.trim()) {
       setResults([])
       return
     }
 
-    console.log('🔍 Searching for:', term)
-
-    setIsLoading(true)
+    startLoading('Searching...')
     try {
       const searchResults = await documentDB.searchDocuments(term)
-      console.log('✨ Search Results:', searchResults)
       setResults(searchResults)
     } catch (error) {
-      console.error('❌ Search Error:', error)
+      console.error('Search Error:', error)
     } finally {
-      setIsLoading(false)
+      reset()
     }
   }, 300)
 
@@ -167,43 +161,68 @@ export default function SearchSection() {
     }
   }, [isPreviewOpen])
 
+  console.log('rerendering')
+
   return (
-    <div className="flex flex-col h-full space-y-4">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b">
         <Input
-          type="text"
-          placeholder="Search in documents..."
+          type="search"
+          placeholder="Search in document..."
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value)
             handleSearch(e.target.value)
           }}
-          className="flex-1"
+          className="w-full"
         />
-        {isLoading && <Loader2 className="animate-spin" />}
       </div>
 
-      <div className="space-y-2">
-        {results.map((result, index) => (
-          <div
-            key={`${result.id}-${index}`}
-            onClick={() => handleResultClick(result)}
-            className="group p-4 rounded-lg border bg-card hover:bg-accent transition-colors cursor-pointer"
-          >
-            <div className="flex items-start justify-between">
-              <h3 className="font-medium group-hover:text-accent-foreground">{result.title}</h3>
-              <Badge variant="secondary" className="ml-2">
-                Preview
-              </Badge>
+      <div className="flex-grow p-4">
+        <ScrollArea className="h-full">
+          {isLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-            <div
-              className="text-sm text-muted-foreground mt-2 line-clamp-2"
-              dangerouslySetInnerHTML={{
-                __html: highlightSearchTerms(result.context, searchTerm),
-              }}
-            />
-          </div>
-        ))}
+          ) : searchTerm && results.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+              <div className="text-4xl mb-2">🔍</div>
+              <p className="text-lg font-medium">No results found</p>
+              <p className="text-sm">Try different keywords or check your spelling</p>
+            </div>
+          ) : !searchTerm ? (
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+              <div className="text-4xl mb-2">📝</div>
+              <p className="text-lg font-medium">Start searching</p>
+              <p className="text-sm">Type something to search in the document</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {results.map((result, index) => (
+                <div
+                  key={`${result.id}-${index}`}
+                  onClick={() => handleResultClick(result)}
+                  className="group p-4 rounded-lg border bg-card hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-medium">{result.title}</div>
+                      <div
+                        className="text-sm text-muted-foreground mt-1"
+                        dangerouslySetInnerHTML={{
+                          __html: highlightSearchTerms(result.context, searchTerm),
+                        }}
+                      />
+                    </div>
+                    <Badge variant="secondary" className="shrink-0">
+                      {Math.round(result.score * 100)}% match
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </div>
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
