@@ -164,65 +164,67 @@ export default function SearchSection() {
   console.log('rerendering')
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <Input
-          type="search"
-          placeholder="Search in document..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value)
-            handleSearch(e.target.value)
-          }}
-          className="w-full"
-        />
-      </div>
+    <div className="mx-4 mt-4 mb-0 h-[calc(100vh-7rem)] rounded-lg border bg-background shadow">
+      <div className="flex flex-col h-full">
+        <div className="flex items-center gap-4 p-4 border-b">
+          <Input
+            type="search"
+            placeholder="Search in document..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value)
+              handleSearch(e.target.value)
+            }}
+            className="w-full"
+          />
+        </div>
 
-      <div className="flex-grow p-4">
-        <ScrollArea className="h-full">
-          {isLoading ? (
-            <div className="h-full flex items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : searchTerm && results.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-              <div className="text-4xl mb-2">🔍</div>
-              <p className="text-lg font-medium">No results found</p>
-              <p className="text-sm">Try different keywords or check your spelling</p>
-            </div>
-          ) : !searchTerm ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-              <div className="text-4xl mb-2">📝</div>
-              <p className="text-lg font-medium">Start searching</p>
-              <p className="text-sm">Type something to search in the document</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {results.map((result, index) => (
-                <div
-                  key={`${result.id}-${index}`}
-                  onClick={() => handleResultClick(result)}
-                  className="group p-4 rounded-lg border bg-card hover:bg-accent transition-colors cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-medium">{result.title}</div>
-                      <div
-                        className="text-sm text-muted-foreground mt-1"
-                        dangerouslySetInnerHTML={{
-                          __html: highlightSearchTerms(result.context, searchTerm),
-                        }}
-                      />
+        <div className="flex-grow p-4 overflow-auto">
+          <ScrollArea className="h-full">
+            {isLoading ? (
+              <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : searchTerm && results.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                <div className="text-4xl mb-2">🔍</div>
+                <p className="text-lg font-medium">No results found</p>
+                <p className="text-sm">Try different keywords or check your spelling</p>
+              </div>
+            ) : !searchTerm ? (
+              <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+                <div className="text-4xl mb-2">📝</div>
+                <p className="text-lg font-medium">Start searching</p>
+                <p className="text-sm">Type something to search in the document</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {results.map((result, index) => (
+                  <div
+                    key={`${result.id}-${index}`}
+                    onClick={() => handleResultClick(result)}
+                    className="group p-4 rounded-lg border bg-card hover:bg-accent transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-medium">{result.title}</div>
+                        <div
+                          className="text-sm text-muted-foreground mt-1"
+                          dangerouslySetInnerHTML={{
+                            __html: highlightSearchTerms(result.context, searchTerm),
+                          }}
+                        />
+                      </div>
+                      <Badge variant="secondary" className="shrink-0">
+                        {Math.round(result.score * 100)}% match
+                      </Badge>
                     </div>
-                    <Badge variant="secondary" className="shrink-0">
-                      {Math.round(result.score * 100)}% match
-                    </Badge>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
       </div>
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>

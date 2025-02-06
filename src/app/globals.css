@@ -77,6 +77,10 @@ body {
   }
 }
 
+/* .main-container {
+  max-height: calc(100% - 272px);
+} */
+
 /* Editor styles */
 .ContentEditable__root {
   position: relative;

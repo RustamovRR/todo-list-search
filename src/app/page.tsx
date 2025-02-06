@@ -13,7 +13,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex min-h-screen h-screen flex-col items-center justify-between">
+    <>
       {!isDevelopment && (
         <>
           <Head>
@@ -58,31 +58,33 @@ export default function Home() {
         </>
       )}
 
-      <header className="flex-shrink-0 bg-foreground dark:bg-background text-background dark:text-foreground w-full p-4">
-        <div>
-          <h1 className="text-4xl font-bold">Logo</h1>
-        </div>
-      </header>
-      <main className="w-full flex-grow">
-        <ResizablePanelGroup className="h-full" direction="horizontal">
-          <ResizablePanel defaultSize={60}>
-            <div className="h-full">
-              <Editor />
-            </div>
-          </ResizablePanel>
-          <ResizableHandle />
-          <ResizablePanel defaultSize={40}>
-            <div className="h-full">
-              <SearchSection />
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </main>
-      <footer className="flex-shrink-0 bg-foreground dark:bg-background text-background dark:text-foreground w-full p-4">
+      <div className="flex min-h-screen h-screen flex-col items-center">
+        <header className="flex-shrink-0 bg-foreground dark:bg-background text-background dark:text-foreground w-full p-4">
+          <div>
+            <h1 className="text-4xl font-bold">Logo</h1>
+          </div>
+        </header>
+        <main className="main-container w-full flex-grow">
+          <ResizablePanelGroup className="h-full" direction="horizontal">
+            <ResizablePanel defaultSize={60}>
+              <div className="">
+                <Editor />
+              </div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={40}>
+              <div className="">
+                <SearchSection />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </main>
+        {/* <footer className="flex-shrink-0 bg-foreground dark:bg-background text-background dark:text-foreground w-full p-4">
         <div>
           <h1 className="text-4xl font-bold">Footer</h1>
         </div>
-      </footer>
-    </div>
+      </footer> */}
+      </div>
+    </>
   )
 }

@@ -137,28 +137,21 @@ const Editor = () => {
   )
 
   // Editor changes
-  const handleEditorChange = useCallback(
-    (editorState: EditorState) => {
-      if (!editorRef.current) return
+  const handleEditorChange = useCallback((editorState: EditorState) => {
+    if (!editorRef.current) return
 
-      editorState.read(() => {
-        const content = $getRoot().getTextContent()
-        console.log('📝 Editor Content Changed:', {
-          length: content.length,
-          preview: content.slice(0, 100) + '...',
-          paragraphs: content.split('\n').length,
-          timestamp: new Date().toISOString(),
-        })
-
-        setDocumentFile((prev) => {
-          const newDoc = { ...prev, content }
-          debouncedSave(newDoc)
-          return newDoc
-        })
+    editorState.read(() => {
+      const content = $getRoot().getTextContent()
+      console.log('📝 Editor Content Changed:', {
+        length: content.length,
+        preview: content.slice(0, 100) + '...',
+        paragraphs: content.split('\n').length,
+        timestamp: new Date().toISOString(),
       })
-    },
-    [debouncedSave],
-  )
+
+      setDocumentFile((prev) => ({ ...prev, content }))
+    })
+  }, [])
 
   // Load document into editor
   const loadDocument = useCallback(async (id: string) => {
@@ -298,9 +291,9 @@ const Editor = () => {
   }, [loadDocument])
 
   return (
-    <div className="m-4 overflow-hidden h-full rounded-lg border bg-background shadow">
+    <div className="mx-4 mt-4 mb-0 max-h-[90vh] rounded-lg border bg-background shadow overflow-hidden">
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-4 p-4 border-b">
+        <div className="flex items-center gap-4 px-4 py-2 border-b">
           <Input
             type="text"
             placeholder="Document title"
@@ -315,20 +308,22 @@ const Editor = () => {
           </div>
         </div>
 
-        <LexicalComposer initialConfig={editorConfig}>
-          <SharedAutocompleteContext>
-            <FloatingLinkContext>
-              <div className="relative h-full w-full">
-                <TooltipProvider>
-                  <div className="w-full h-full p-4">
-                    <Plugins setEditor={handleEditorRef} />
-                  </div>
-                </TooltipProvider>
-              </div>
-              <OnChangePlugin onChange={handleEditorChange} />
-            </FloatingLinkContext>
-          </SharedAutocompleteContext>
-        </LexicalComposer>
+        <div className="flex-grow overflow-auto">
+          <LexicalComposer initialConfig={editorConfig}>
+            <SharedAutocompleteContext>
+              <FloatingLinkContext>
+                <div className="relative h-full w-full">
+                  <TooltipProvider>
+                    <div className="w-full h-full p-4 pb-0">
+                      <Plugins setEditor={handleEditorRef} />
+                    </div>
+                  </TooltipProvider>
+                </div>
+                <OnChangePlugin onChange={handleEditorChange} />
+              </FloatingLinkContext>
+            </SharedAutocompleteContext>
+          </LexicalComposer>
+        </div>
       </div>
     </div>
   )

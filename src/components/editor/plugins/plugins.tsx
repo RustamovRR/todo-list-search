@@ -129,7 +129,7 @@ export function Plugins({ setEditor }: PluginsProps) {
 
         <ListMaxIndentLevelPlugin />
       </div>
-      <div className="clear-both flex h-10 items-center justify-end border-t p-1">
+      <div className="clear-both flex h-12 items-center justify-end border-t">
         {/* <MaxLengthPlugin maxLength={maxLength} /> */}
         {/* <CharacterLimitPlugin maxLength={maxLength} charset="UTF-16" /> */}
         <div className="flex justify-end">
