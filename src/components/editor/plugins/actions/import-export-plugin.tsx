@@ -3,11 +3,11 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $createParagraphNode, $createTextNode, $getRoot, $isRootNode } from 'lexical'
 import { DownloadIcon, LoaderIcon, UploadIcon } from 'lucide-react'
 import mammoth from 'mammoth'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { pdfjs } from 'react-pdf'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
-import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx'
+import { Document, Packer, Paragraph, TextRun } from 'docx'
 import { saveAs } from 'file-saver'
 
 import { Button } from '@/components/ui/button'
@@ -134,73 +134,60 @@ export function ImportExportPlugin() {
     }
   }
 
-  const exportToDocx = async () => {
-    try {
-      setIsLoading(true)
-      setIsExporting(true)
-      setProgress(0)
-      setImportStatus('Hujjatni DOCX formatiga o\'tkazish...')
-      setProgress(30)
+  const exportToDocx = useCallback(() => {
+    if (!editor) return
 
-      const editorState = editor.getEditorState()
-      const docx = new DocxDocument({
-        sections: [
-          {
-            properties: {},
-            children: [],
-          },
-        ],
+    editor.update(() => {
+      const docxParagraphs: any[] = []
+      const nodes = $getRoot().getChildren()
+
+      nodes.forEach((node) => {
+        if (node.getType() === 'paragraph') {
+          const text = node.getTextContent()
+          if (text.trim()) {
+            docxParagraphs.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text,
+                  }),
+                ],
+              })
+            )
+          }
+        }
       })
 
-      editorState.read(() => {
-        const root = $getRoot()
-        const children = root.getChildren()
+      if (docxParagraphs.length === 0) {
+        toast.error('Eksport qilish uchun matn kiritilmagan')
+        return
+      }
 
-        const docxParagraphs = children
-          .map((node) => {
-            if ($isRootNode(node)) return null
-
-            const textContent = node.getTextContent()
-            return new Paragraph({
-              children: [
-                new TextRun({
-                  text: textContent,
-                }),
-              ],
-            })
-          })
-          .filter(Boolean)
-
-        docx.addSection({
-          children: docxParagraphs,
+      try {
+        const doc = new Document({
+          sections: [
+            {
+              properties: {},
+              children: docxParagraphs,
+            },
+          ],
         })
-      })
 
-      setProgress(60)
-      setImportStatus('DOCX fayl yaratish...')
-
-      const buffer = await Packer.toBuffer(docx)
-      const blob = new Blob([buffer], {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      })
-
-      setProgress(90)
-      setImportStatus('Faylni saqlash...')
-
-      saveAs(blob, `Hujjat_${new Date().toISOString()}.docx`)
-
-      setProgress(100)
-      toast.success('Hujjat DOCX formatida muvaffaqiyatli eksport qilindi')
-    } catch (error) {
-      console.error('Export error:', error)
-      toast.error('Hujjatni DOCX formatida eksport qilishda xatolik yuz berdi')
-    } finally {
-      setIsLoading(false)
-      setIsExporting(false)
-      setProgress(0)
-      setImportStatus('')
-    }
-  }
+        Packer.toBlob(doc).then((blob) => {
+          const url = URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = 'document.docx'
+          link.click()
+          URL.revokeObjectURL(url)
+          toast.success('Hujjat muvaffaqiyatli eksport qilindi')
+        })
+      } catch (error) {
+        console.error('Export error:', error)
+        toast.error('Eksport qilishda xatolik yuz berdi')
+      }
+    })
+  }, [editor])
 
   const handleImport = () => {
     const input = document.createElement('input')
