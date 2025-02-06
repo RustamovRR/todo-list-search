@@ -4,7 +4,7 @@ import { $createParagraphNode, $createTextNode, $getRoot, $isRootNode } from 'le
 import { DownloadIcon, LoaderIcon, UploadIcon } from 'lucide-react'
 import mammoth from 'mammoth'
 import { useState } from 'react'
-import { pdfjs, Document, Page } from 'react-pdf'
+import { pdfjs } from 'react-pdf'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx'
@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Progress } from '@/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { toast } from '@/hooks/use-toast'
+import toast from 'react-hot-toast'
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
 
@@ -38,7 +38,7 @@ export function ImportExportPlugin() {
 
           const pages = pdf.numPages
           setTotalPages(pages)
-          setImportStatus('Reading PDF file...')
+          setImportStatus('PDF fayl o\'qilmoqda...')
 
           for (let i = 1; i <= pages; i++) {
             const page = await pdf.getPage(i)
@@ -51,7 +51,7 @@ export function ImportExportPlugin() {
 
             setCurrentPage(i)
             setProgress((i / pages) * 100)
-            setImportStatus(`Processing page ${i} of ${pages}`)
+            setImportStatus(`Sahifa ${i} ni qayta ishlash ${pages}`)
           }
 
           resolve(text)
@@ -76,7 +76,7 @@ export function ImportExportPlugin() {
       setCurrentPage(0)
 
       if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        setImportStatus('Importing DOCX file...')
+        setImportStatus('DOCX fayl yuklanmoqda...')
         const arrayBuffer = await file.arrayBuffer()
         const result = await mammoth.extractRawText({ arrayBuffer })
         const text = result.value
@@ -94,16 +94,13 @@ export function ImportExportPlugin() {
             }
           })
         })
-        toast({
-          title: 'Success',
-          description: 'DOCX file imported successfully',
-        })
+        toast.success('DOCX fayl muvaffaqiyatli yuklandi')
       } else if (file.type === 'application/pdf') {
         try {
-          setImportStatus('Starting PDF import...')
+          setImportStatus('PDF yuklash boshlanmoqda...')
           const text = await extractTextFromPDF(file)
 
-          setImportStatus('Formatting content...')
+          setImportStatus('Tarkibni formatlash...')
           editor.update(() => {
             const root = $getRoot()
             root.clear()
@@ -118,26 +115,16 @@ export function ImportExportPlugin() {
             })
           })
 
-          toast({
-            title: 'Success',
-            description: 'PDF file imported successfully',
-          })
+          toast.success('PDF fayl muvaffaqiyatli yuklandi')
         } catch (pdfError) {
           console.error('PDF import error:', pdfError)
-          toast({
-            title: 'Error',
-            description: 'Failed to import PDF file. The file might be corrupted or password protected.',
-            variant: 'destructive',
-          })
+          toast.error('PDF faylni yuklab bo\'lmadi. Fayl buzilgan yoki parol bilan himoyalangan bo\'lishi mumkin.')
         }
       }
     } catch (error) {
       console.error('Import error:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to import file',
-        variant: 'destructive',
-      })
+      setImportStatus('Xatolik yuz berdi')
+      toast.error('Faylni yuklab bo\'lmadi')
     } finally {
       setIsLoading(false)
       setProgress(0)
@@ -151,7 +138,8 @@ export function ImportExportPlugin() {
     try {
       setIsLoading(true)
       setIsExporting(true)
-      setImportStatus('Converting document to DOCX format...')
+      setProgress(0)
+      setImportStatus('Hujjatni DOCX formatiga o\'tkazish...')
       setProgress(30)
 
       const editorState = editor.getEditorState()
@@ -189,7 +177,7 @@ export function ImportExportPlugin() {
       })
 
       setProgress(60)
-      setImportStatus('Generating DOCX file...')
+      setImportStatus('DOCX fayl yaratish...')
 
       const buffer = await Packer.toBuffer(docx)
       const blob = new Blob([buffer], {
@@ -197,22 +185,15 @@ export function ImportExportPlugin() {
       })
 
       setProgress(90)
-      setImportStatus('Saving file...')
+      setImportStatus('Faylni saqlash...')
 
-      saveAs(blob, `Document_${new Date().toISOString()}.docx`)
+      saveAs(blob, `Hujjat_${new Date().toISOString()}.docx`)
 
       setProgress(100)
-      toast({
-        title: 'Success',
-        description: 'Document exported as DOCX successfully',
-      })
+      toast.success('Hujjat DOCX formatida muvaffaqiyatli eksport qilindi')
     } catch (error) {
       console.error('Export error:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to export document as DOCX',
-        variant: 'destructive',
-      })
+      toast.error('Hujjatni DOCX formatida eksport qilishda xatolik yuz berdi')
     } finally {
       setIsLoading(false)
       setIsExporting(false)
@@ -243,14 +224,14 @@ export function ImportExportPlugin() {
       <Dialog open={isLoading} onOpenChange={setIsLoading}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isExporting ? 'Exporting Document' : 'Importing Document'}</DialogTitle>
+            <DialogTitle>{isExporting ? 'Hujjat eksport qilinmoqda' : 'Fayl yuklanmoqda'}</DialogTitle>
             <DialogDescription>{importStatus}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
             <Progress value={progress} className="w-full" />
             {!isExporting && totalPages > 0 && (
               <p className="text-sm text-muted-foreground text-center">
-                Page {currentPage} of {totalPages}
+                Sahifa {currentPage} dan {totalPages}
               </p>
             )}
           </div>
@@ -262,18 +243,20 @@ export function ImportExportPlugin() {
           <Button
             variant={'ghost'}
             onClick={handleImport}
-            title="Import"
-            aria-label="Import content from file"
+            title="Yuklash"
+            aria-label="Fayl yuklash (.docx, .pdf)"
             size={'sm'}
             className="p-2"
             disabled={isLoading}
           >
-            {isLoading && !isExporting ? <LoaderIcon className="size-4 animate-spin" /> : <UploadIcon className="size-4" />}
+            {isLoading && !isExporting ? (
+              <LoaderIcon className="size-4 animate-spin" />
+            ) : (
+              <UploadIcon className="size-4" />
+            )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
-          {isLoading && !isExporting ? 'Importing...' : 'Import Content (.docx, .pdf)'}
-        </TooltipContent>
+        <TooltipContent>{isLoading && !isExporting ? 'Yuklanmoqda...' : 'Fayl yuklash (.docx, .pdf)'}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -281,16 +264,20 @@ export function ImportExportPlugin() {
           <Button
             variant={'ghost'}
             onClick={exportToDocx}
-            title="Export"
-            aria-label="Export as DOCX"
+            title="Eksport"
+            aria-label="DOCX formatida eksport"
             size={'sm'}
             className="p-2"
             disabled={isLoading}
           >
-            {isLoading && isExporting ? <LoaderIcon className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
+            {isLoading && isExporting ? (
+              <LoaderIcon className="size-4 animate-spin" />
+            ) : (
+              <DownloadIcon className="size-4" />
+            )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{isLoading && isExporting ? 'Exporting...' : 'Export as DOCX'}</TooltipContent>
+        <TooltipContent>{isLoading && isExporting ? 'Eksport qilinmoqda...' : 'DOCX formatida eksport'}</TooltipContent>
       </Tooltip>
     </>
   )

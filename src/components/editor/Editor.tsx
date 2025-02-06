@@ -1,6 +1,6 @@
 'use client'
 
-import { InitialConfigType, LexicalComposer } from '@lexical/react/LexicalComposer'
+import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import {
   $getRoot,
@@ -15,15 +15,19 @@ import {
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { FloatingLinkContext } from './context/floating-link-context'
 import { SharedAutocompleteContext } from './context/shared-autocomplete-context'
-import { nodes } from './nodes/nodes'
 import { Plugins } from './plugins/plugins'
-import { editorTheme } from './themes/editor-theme'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { debounce } from 'lodash-es'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { documentDB } from '@/lib/db'
-import { toast } from '@/hooks/use-toast'
+import toast from 'react-hot-toast'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
+import { cn } from '@/lib/utils'
+import { editorConfig } from './editorConfig'
 
 interface Document {
   id?: string
@@ -31,21 +35,11 @@ interface Document {
   content: string
 }
 
-const editorConfig: InitialConfigType = {
-  namespace: 'Editor',
-  theme: {
-    ...editorTheme,
-    paragraph: 'relative m-0 text-justify w-full',
-    text: {
-      ...editorTheme.text,
-      base: 'whitespace-normal break-words leading-relaxed text-justify hyphens-auto w-full',
-    },
-  },
-  nodes,
-  onError: (error: Error) => {
-    console.error('❌ Editor Error:', error)
-  },
-}
+const formSchema = z.object({
+  title: z.string().min(1, 'Hujjat sarlavhasi kiritilishi shart'),
+})
+
+type FormValues = z.infer<typeof formSchema>
 
 const Editor = () => {
   const [documentFile, setDocumentFile] = useState<Document>({
@@ -54,6 +48,14 @@ const Editor = () => {
   })
   const [isSaving, setIsSaving] = useState(false)
   const editorRef = useRef<LexicalEditor | null>(null)
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: documentFile.title,
+    },
+    mode: 'onChange', // Real-time validation
+  })
 
   // Editor reference'ni saqlash
   const handleEditorRef = useCallback((editor: LexicalEditor) => {
@@ -85,8 +87,13 @@ const Editor = () => {
 
   // Save document
   const saveDocument = async (doc: Document) => {
-    if (!doc.title.trim() || !doc.content.trim()) {
-      console.log('⚠️ Empty document, skipping save')
+    const result = await form.trigger('title')
+    if (!result) {
+      return
+    }
+
+    if (!doc.content.trim()) {
+      toast.error("Hujjat matni bo'sh bo'lishi mumkin emas")
       return
     }
 
@@ -110,18 +117,10 @@ const Editor = () => {
       })
 
       setDocumentFile((prev) => ({ ...prev, id: savedDoc.id }))
-
-      toast({
-        title: 'Success',
-        description: 'Saved successfully',
-      })
+      toast.success('Hujjat muvaffaqiyatli saqlandi')
     } catch (error) {
       console.error('❌ Save Error:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to save document',
-        variant: 'destructive',
-      })
+      toast.error('Hujjatni saqlashda xatolik yuz berdi')
     } finally {
       setIsSaving(false)
     }
@@ -198,11 +197,7 @@ const Editor = () => {
       return doc
     } catch (error) {
       console.error('❌ Error loading document:', error)
-      toast({
-        title: 'Error',
-        description: 'Failed to load document',
-        variant: 'destructive',
-      })
+      toast.error('Hujjatni yuklashda xatolik yuz berdi')
     }
   }, [])
 
@@ -274,11 +269,7 @@ const Editor = () => {
         }, 100)
       } catch (error) {
         console.error('❌ Error Opening Document:', error)
-        toast({
-          title: 'Error',
-          description: 'Failed to open document',
-          variant: 'destructive',
-        })
+        toast.error('Hujjatni ochishda xatolik yuz berdi')
       }
     }
 
@@ -293,20 +284,44 @@ const Editor = () => {
   return (
     <div className="mx-4 mt-4 mb-0 max-h-[90vh] rounded-lg border bg-background shadow overflow-hidden">
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-4 px-4 py-2 border-b">
-          <Input
-            type="text"
-            placeholder="Document title"
-            value={documentFile.title}
-            onChange={(e) => setDocumentFile((prev) => ({ ...prev, title: e.target.value }))}
-            className="max-w-sm"
-          />
-          <div className="flex items-center gap-2 ml-auto">
-            <Button onClick={() => saveDocument(documentFile)} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save'}
-            </Button>
+        <Form {...form}>
+          <div className="flex items-center gap-4 px-4 py-2 border-b">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem className="flex-grow">
+                  <FormControl>
+                    <Input
+                      type="text"
+                      placeholder="Hujjat sarlavhasini kiriting"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e)
+                        setDocumentFile((prev) => ({ ...prev, title: e.target.value }))
+                        // Clear errors when input has value
+                        if (e.target.value.trim()) {
+                          form.clearErrors('title')
+                        }
+                      }}
+                      value={documentFile.title}
+                      className={cn(
+                        'max-w-sm',
+                        form.formState.errors.title && 'border-destructive focus-visible:ring-destructive',
+                      )}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-xs absolute" />
+                </FormItem>
+              )}
+            />
+            <div className="flex items-center gap-2 ml-auto">
+              <Button onClick={() => saveDocument(documentFile)} disabled={isSaving}>
+                {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+              </Button>
+            </div>
           </div>
-        </div>
+        </Form>
 
         <div className="flex-grow overflow-auto">
           <LexicalComposer initialConfig={editorConfig}>

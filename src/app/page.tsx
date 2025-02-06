@@ -1,8 +1,11 @@
+// 'use client'
+
 import SearchSection from '@/components/shared/SearchSection'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import Editor from '@/components/editor'
 import Head from 'next/head'
 import Script from 'next/script'
+import Header from '@/components/shared/Header'
 
 export default function Home() {
   const YM_ID = process.env.NEXT_PUBLIC_YM_ID
@@ -60,9 +63,7 @@ export default function Home() {
 
       <div className="flex min-h-screen h-screen flex-col items-center">
         <header className="flex-shrink-0 bg-foreground dark:bg-background text-background dark:text-foreground w-full p-4">
-          <div>
-            <h1 className="text-4xl font-bold">Logo</h1>
-          </div>
+          <Header />
         </header>
         <main className="main-container w-full flex-grow">
           <ResizablePanelGroup className="h-full" direction="horizontal">

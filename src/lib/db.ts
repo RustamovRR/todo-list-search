@@ -2,10 +2,11 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb'
 import FlexSearch from 'flexsearch'
 
-interface Document {
+export interface Document {
   id?: string
   title: string
   content: string
+  formattedContent?: string
   createdAt: number
   updatedAt: number
 }
@@ -27,7 +28,7 @@ interface MyDB extends DBSchema {
   documents: {
     key: string
     value: Document
-    indexes: { 'by-date': number }
+    indexes: { 'by-date': number, 'content': string }
   }
 }
 
@@ -62,6 +63,7 @@ class DocumentDB {
         if (!db.objectStoreNames.contains('documents')) {
           const store = db.createObjectStore('documents', { keyPath: 'id' })
           store.createIndex('by-date', 'updatedAt')
+          store.createIndex('content', 'content')
         }
       },
     })
@@ -209,7 +211,16 @@ class DocumentDB {
 
   async getAllDocuments(): Promise<Document[]> {
     const db = await this.db
-    return db.getAllFromIndex('documents', 'by-date')
+    const tx = db.transaction('documents', 'readonly')
+    const store = tx.objectStore('documents')
+    return store.getAll()
+  }
+
+  async deleteDocument(id: string): Promise<void> {
+    const db = await this.db
+    await db.delete('documents', id)
+    // Qidiruv indeksidan ham o'chiramiz
+    this.searchIndex.remove(id)
   }
 
   async searchDocuments(query: string): Promise<SearchResult[]> {

@@ -77,10 +77,6 @@ body {
   }
 }
 
-/* .main-container {
-  max-height: calc(100% - 272px);
-} */
-
 /* Editor styles */
 .ContentEditable__root {
   position: relative;
@@ -288,7 +284,7 @@ mark {
 /* Search highlight styles */
 /* Search highlight styles */
 .search-match {
-  background-color: #fef9c3; /* Tailwind: bg-yellow-100 */
+  background-color: oklch(.905 .182 98.111); /* Tailwind: bg-yellow-100 */
   border-radius: 0.125rem; /* Tailwind: rounded-sm */
   scroll-margin-top: 1rem; /* Tailwind: scroll-mt-4 */
   padding: 0;

@@ -12,6 +12,7 @@
   "dependencies": {
     "@firebase/app": "^0.10.18",
     "@firebase/firestore": "^4.7.6",
+    "@hookform/resolvers": "^3.10.0",
     "@lexical/code": "^0.23.1",
     "@lexical/file": "^0.23.1",
     "@lexical/hashtag": "^0.23.1",
@@ -60,11 +61,15 @@
     "react-colorful": "^5.6.1",
     "react-dom": "^19.0.0",
     "react-error-boundary": "^5.0.0",
+    "react-hook-form": "^7.54.2",
+    "react-hot-toast": "^2.5.1",
     "react-pdf": "^9.2.1",
     "react-resizable-panels": "^2.1.7",
     "sonner": "^1.7.3",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.1",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

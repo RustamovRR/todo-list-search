@@ -169,7 +169,7 @@ export default function SearchSection() {
         <div className="flex items-center gap-4 p-4 border-b">
           <Input
             type="search"
-            placeholder="Search in document..."
+            placeholder="Hujjatdan qidirish..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value)
@@ -188,17 +188,18 @@ export default function SearchSection() {
             ) : searchTerm && results.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                 <div className="text-4xl mb-2">🔍</div>
-                <p className="text-lg font-medium">No results found</p>
-                <p className="text-sm">Try different keywords or check your spelling</p>
+                <p className="text-lg font-medium">Natija topilmadi</p>
+                <p className="text-sm">Boshqa kalit so'z bilan qidirib ko'ring</p>
               </div>
             ) : !searchTerm ? (
               <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                 <div className="text-4xl mb-2">📝</div>
-                <p className="text-lg font-medium">Start searching</p>
-                <p className="text-sm">Type something to search in the document</p>
+                <p className="text-lg font-medium">Qidirishni boshlang</p>
+                <p className="text-sm">Hujjat ichidan qidirish uchun matn kiriting</p>
               </div>
             ) : (
               <div className="space-y-4">
+                <p className="text-sm text-muted-foreground mt-1">"{searchTerm}" so'zi bo'yicha natijalar</p>
                 {results.map((result, index) => (
                   <div
                     key={`${result.id}-${index}`}
@@ -216,7 +217,7 @@ export default function SearchSection() {
                         />
                       </div>
                       <Badge variant="secondary" className="shrink-0">
-                        {Math.round(result.score * 100)}% match
+                        {Math.round(result.score * 100)}% mos
                       </Badge>
                     </div>
                   </div>
@@ -233,7 +234,7 @@ export default function SearchSection() {
             <div className="flex items-center justify-between">
               <div>
                 <DialogTitle className="text-xl font-semibold">{selectedResult?.title}</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">Showing matches for "{searchTerm}"</p>
+                <p className="text-sm text-muted-foreground mt-1">"{searchTerm}" so'zi bo'yicha mosliklar</p>
               </div>
 
               {totalMatches > 0 && (
