@@ -118,6 +118,21 @@ const Editor = () => {
 
       setDocumentFile((prev) => ({ ...prev, id: savedDoc.id }))
       toast.success('Hujjat muvaffaqiyatli saqlandi')
+      // State ni tozalash
+      setDocumentFile({
+        title: '',
+        content: '',
+      })
+      form.reset()
+
+      // Editorni tozalash
+      editorRef.current?.update(() => {
+        const root = $getRoot()
+        root.clear()
+        const paragraph = $createParagraphNode()
+        paragraph.append($createTextNode(''))
+        root.append(paragraph)
+      })
     } catch (error) {
       console.error('❌ Save Error:', error)
       toast.error('Hujjatni saqlashda xatolik yuz berdi')
