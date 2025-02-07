@@ -9,7 +9,7 @@ const Header = () => {
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(false)
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center gap-12">
       <h1 className="text-4xl font-bold">Logo</h1>
       <Button variant="secondary" className="flex items-center gap-2" onClick={() => setIsDocumentsOpen(true)}>
         <FileText className="h-4 w-4" />
