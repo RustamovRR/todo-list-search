@@ -143,6 +143,9 @@ importers:
       mammoth:
         specifier: ^1.9.0
         version: 1.9.0
+      nanoid:
+        specifier: ^5.0.9
+        version: 5.0.9
       next:
         specifier: 15.1.4
         version: 15.1.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)

@@ -129,10 +129,10 @@ export function Plugins({ setEditor }: PluginsProps) {
 
         <ListMaxIndentLevelPlugin />
       </div>
-      <div className="clear-both flex h-12 items-center justify-end border-t">
+      <div className="clear-both flex h-full items-center justify-end border-t pt-1">
         {/* <MaxLengthPlugin maxLength={maxLength} /> */}
         {/* <CharacterLimitPlugin maxLength={maxLength} charset="UTF-16" /> */}
-        <div className="flex justify-end">
+        <div className="flex gap-2 justify-end">
           <ImportExportPlugin />
           <EditModeTogglePlugin />
           <>

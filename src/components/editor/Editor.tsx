@@ -20,7 +20,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { debounce } from 'lodash-es'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
-import { documentDB } from '@/lib/db'
+import { documentService } from '@/lib/document-service'
 import toast from 'react-hot-toast'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,6 +33,16 @@ interface Document {
   id?: string
   title: string
   content: string
+  createdAt?: Date
+  updatedAt?: Date
+}
+
+interface BookPart {
+  title: string
+  content: string
+  partNumber: number
+  totalParts: number
+  characterCount?: number
 }
 
 const formSchema = z.object({
@@ -41,13 +51,22 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
+// Format character count (e.g. 1234 -> 1.2K)
+const formatCharCount = (count: number): string => {
+  if (count < 1000) return `${count}`
+  return `${(count / 1000).toFixed(1)}K`
+}
+
 const Editor = () => {
   const [documentFile, setDocumentFile] = useState<Document>({
     title: '',
     content: '',
   })
   const [isSaving, setIsSaving] = useState(false)
+  const [bookParts, setBookParts] = useState<BookPart[]>([])
+  const [currentPart, setCurrentPart] = useState<BookPart | null>(null)
   const editorRef = useRef<LexicalEditor | null>(null)
+  const editorContainerRef = useRef<HTMLDivElement>(null)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -85,6 +104,72 @@ const Editor = () => {
     )
   }, [])
 
+  // Scroll'ni boshqarish
+  useEffect(() => {
+    if (editorContainerRef.current && currentPart) {
+      // Editor ichidagi contentni topamiz
+      const editorContent = editorContainerRef.current.querySelector('.editor-container')
+      if (editorContent) {
+        // Smooth scroll bilan tepaga qaytaramiz
+        editorContent.scrollTo({
+          top: 0,
+          behavior: 'smooth',
+        })
+      }
+    }
+  }, [currentPart?.partNumber])
+
+  // Book parts eventini tinglash
+  useEffect(() => {
+    const handleBookParts = (event: CustomEvent<{ parts: BookPart[]; currentPart: BookPart }>) => {
+      console.log('📚 Book parts received:', event.detail)
+      setBookParts(event.detail.parts)
+      setCurrentPart(event.detail.currentPart)
+      setDocumentFile({
+        title: event.detail.currentPart.title,
+        content: event.detail.currentPart.content,
+      })
+    }
+
+    window.addEventListener('bookPartsCreated', handleBookParts as EventListener)
+    return () => {
+      window.removeEventListener('bookPartsCreated', handleBookParts as EventListener)
+    }
+  }, [])
+
+  // Qismni almashtirish
+  const switchPart = (part: BookPart) => {
+    // Agar bir xil qism tanlansa, hech narsa qilmaymiz
+    if (currentPart?.partNumber === part.partNumber) {
+      return
+    }
+
+    // Yangi qismga o'tamiz
+    setCurrentPart(part)
+    setDocumentFile((prev) => ({
+      ...prev,
+      title: part.title,
+      content: part.content,
+    }))
+
+    // Editor kontentini yangilaymiz
+    editorRef.current?.update(() => {
+      const root = $getRoot()
+      root.clear()
+      root.append($createParagraphNode().append($createTextNode(part.content)))
+    })
+
+    // Scroll'ni resetlaymiz
+    requestAnimationFrame(() => {
+      if (editorContainerRef.current) {
+        const editorContent = editorContainerRef.current.querySelector('.editor-container')
+        if (editorContent) {
+          editorContent.scrollTop = 0
+        }
+      }
+    })
+  }
+
   // Save document
   const saveDocument = async (doc: Document) => {
     const result = await form.trigger('title')
@@ -106,17 +191,24 @@ const Editor = () => {
 
     try {
       setIsSaving(true)
-      const savedDoc = doc.id
-        ? await documentDB.updateDocument(doc.id, doc)
-        : await documentDB.createDocument(doc as any)
+      // Firebase'ga saqlash
+      const docId = await documentService.saveDocument({
+        ...doc,
+        updatedAt: new Date()
+      })
+
+      // Yangi hujjat bo'lsa ID ni saqlaymiz
+      if (!doc.id) {
+        setDocumentFile(prev => ({ ...prev, id: docId }))
+      }
 
       console.log('✅ Document Saved:', {
-        id: savedDoc.id,
-        title: savedDoc.title,
+        id: docId,
+        title: doc.title,
         timestamp: new Date().toISOString(),
       })
 
-      setDocumentFile((prev) => ({ ...prev, id: savedDoc.id }))
+      setDocumentFile((prev) => ({ ...prev, id: docId }))
       toast.success('Hujjat muvaffaqiyatli saqlandi')
       // State ni tozalash
       setDocumentFile({
@@ -141,15 +233,6 @@ const Editor = () => {
     }
   }
 
-  // Debounced save
-  const debouncedSave = useCallback(
-    debounce((doc: Document) => {
-      console.log('⌛ Debounced save triggered')
-      saveDocument(doc)
-    }, 1000),
-    [],
-  )
-
   // Editor changes
   const handleEditorChange = useCallback((editorState: EditorState) => {
     if (!editorRef.current) return
@@ -172,7 +255,7 @@ const Editor = () => {
     console.log('📂 Loading document:', id)
 
     try {
-      const doc = await documentDB.getDocument(id)
+      const doc = await documentService.loadDocument(id)
       if (!doc || !editorRef.current) {
         console.log('⚠️ Document or editor not found:', {
           docExists: !!doc,
@@ -230,7 +313,7 @@ const Editor = () => {
       })
 
       try {
-        const doc = await documentDB.getDocument(documentId)
+        const doc = await documentService.loadDocument(documentId)
         if (!doc || !editorRef.current) {
           console.log('⚠️ Document not loaded or editor not ready')
           return
@@ -330,7 +413,11 @@ const Editor = () => {
                 </FormItem>
               )}
             />
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-4 ml-auto">
+              {/* Total character count */}
+              <div className="text-sm text-muted-foreground">
+                {formatCharCount(documentFile.content.length)}
+              </div>
               <Button onClick={() => saveDocument(documentFile)} disabled={isSaving}>
                 {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
               </Button>
@@ -338,21 +425,43 @@ const Editor = () => {
           </div>
         </Form>
 
-        <div className="flex-grow overflow-auto">
-          <LexicalComposer initialConfig={editorConfig}>
-            <SharedAutocompleteContext>
-              <FloatingLinkContext>
-                <div className="relative h-full w-full">
-                  <TooltipProvider>
-                    <div className="w-full h-full p-4 pb-0">
-                      <Plugins setEditor={handleEditorRef} />
-                    </div>
-                  </TooltipProvider>
-                </div>
-                <OnChangePlugin onChange={handleEditorChange} />
-              </FloatingLinkContext>
-            </SharedAutocompleteContext>
-          </LexicalComposer>
+        {/* Kitob qismlari tabs */}
+        {bookParts.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-4 ml-5">
+            {bookParts.map((part) => (
+              <Button
+                key={part.partNumber}
+                variant={currentPart?.partNumber === part.partNumber ? 'default' : 'outline'}
+                onClick={() => switchPart(part)}
+                className="flex items-center gap-2"
+              >
+                <span>Part {part.partNumber}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({formatCharCount(part.content.length)})
+                </span>
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Editor container */}
+        <div ref={editorContainerRef} className="relative w-full h-[calc(100vh-12rem)] overflow-hidden">
+          <div className="flex-grow overflow-auto">
+            <LexicalComposer initialConfig={editorConfig}>
+              <SharedAutocompleteContext>
+                <FloatingLinkContext>
+                  <div className="relative h-full w-full">
+                    <TooltipProvider>
+                      <div className="w-full h-full p-4 pb-0">
+                        <Plugins setEditor={handleEditorRef} />
+                      </div>
+                    </TooltipProvider>
+                  </div>
+                  <OnChangePlugin onChange={handleEditorChange} />
+                </FloatingLinkContext>
+              </SharedAutocompleteContext>
+            </LexicalComposer>
+          </div>
         </div>
       </div>
     </div>
