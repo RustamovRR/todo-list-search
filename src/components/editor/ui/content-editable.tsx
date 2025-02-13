@@ -1,5 +1,7 @@
 import { ContentEditable as LexicalContentEditable } from '@lexical/react/LexicalContentEditable'
 import { JSX } from 'react'
+import { cn } from '@/lib/utils'
+import { useEditorStore } from '@/store/editor-store'
 
 type Props = {
   placeholder: string
@@ -8,12 +10,15 @@ type Props = {
 }
 
 export function ContentEditable({ placeholder, className, placeholderClassName }: Props): JSX.Element {
+  const partsCount = useEditorStore((state) => state.partsCount)
+  console.log(partsCount)
   return (
     <LexicalContentEditable
-      className={
-        className ??
-        `ContentEditable__root relative block h-[calc(100vh-19.1rem)] overflow-auto p-4 focus:outline-none`
-      }
+      className={cn(
+        'ContentEditable__root relative block overflow-auto p-4 focus:outline-none',
+        partsCount <= 4 ? 'h-[calc(100vh-16.5rem)]' : 'h-[calc(100vh-22.5rem)]',
+        className,
+      )}
       aria-placeholder={placeholder}
       placeholder={
         <div

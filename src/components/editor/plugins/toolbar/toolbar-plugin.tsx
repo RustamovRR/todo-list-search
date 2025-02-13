@@ -33,7 +33,11 @@ import { HistoryToolbarPlugin } from './history-toolbar-plugin'
 import { LinkToolbarPlugin } from './link-toolbar-plugin'
 import { SubSuperToolbarPlugin } from './subsuper-toolbar-plugin'
 
-export function ToolbarPlugin() {
+interface ToolbarPluginProps {
+  isSaving?: boolean
+}
+
+export function ToolbarPlugin({ isSaving }: ToolbarPluginProps) {
   const [editor] = useLexicalComposerContext()
 
   const [activeEditor, setActiveEditor] = useState(editor)

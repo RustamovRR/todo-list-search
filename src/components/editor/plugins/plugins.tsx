@@ -50,13 +50,12 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { useEffect } from 'react'
 import { LexicalEditor } from 'lexical'
 
-const maxLength = Infinity
-
 interface PluginsProps {
   setEditor?: (editor: LexicalEditor) => void
+  isSaving?: boolean
 }
 
-export function Plugins({ setEditor }: PluginsProps) {
+export function Plugins({ setEditor, isSaving }: PluginsProps) {
   const [editor] = useLexicalComposerContext()
   const [floatingAnchorElem, setFloatingAnchorElem] = useState<HTMLDivElement | null>(null)
 
@@ -75,13 +74,13 @@ export function Plugins({ setEditor }: PluginsProps) {
 
   return (
     <div className="relative">
-      <ToolbarPlugin />
+      <ToolbarPlugin isSaving={isSaving} />
       <div className="relative">
         <AutoFocusPlugin />
         <RichTextPlugin
           contentEditable={
-            <div className="">
-              <div className="" ref={onRef}>
+            <div>
+              <div ref={onRef}>
                 <ContentEditable placeholder={'Start typing ...'} />
               </div>
             </div>

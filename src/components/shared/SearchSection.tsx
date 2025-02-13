@@ -172,9 +172,9 @@ export default function SearchSection() {
   console.log('rerendering')
 
   return (
-    <div className="mx-4 mt-4 mb-0 h-[calc(100vh-7rem)] rounded-lg border bg-background shadow">
+    <div className="h-full flex flex-col rounded-lg border bg-background shadow">
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-4 p-4 border-b">
+        <div className="flex items-center gap-4 px-4 py-2.5 border-b">
           <Input
             type="search"
             placeholder="Hujjatdan qidirish..."
@@ -183,7 +183,7 @@ export default function SearchSection() {
               setSearchTerm(e.target.value)
               handleSearch(e.target.value)
             }}
-            className="w-full"
+            className="w-full h-10"
           />
         </div>
 

@@ -46,6 +46,9 @@ export function ClearEditorActionPlugin() {
               variant="destructive"
               onClick={() => {
                 editor.dispatchCommand(CLEAR_EDITOR_COMMAND, undefined)
+                // Part tablarni tozalash uchun event yuborish
+                const event = new CustomEvent('clearBookParts')
+                window.dispatchEvent(event)
               }}
             >
               Clear

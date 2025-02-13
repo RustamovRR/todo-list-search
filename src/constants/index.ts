@@ -16,4 +16,5 @@ export const GOOGLE_CREDENTIALS = {
 }
 
 // export const MAX_CONTENT_LENGTH = 900000
-export const MAX_CONTENT_LENGTH = 200000
+// export const MAX_CONTENT_LENGTH = 200000
+export const MAX_CONTENT_LENGTH = 20000

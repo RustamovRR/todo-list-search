@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils'
 import { editorConfig } from './editorConfig'
 import { useSession } from 'next-auth/react'
 import { useDocumentStore } from '@/store/document'
+import { useEditorStore } from '@/store/editor-store'
 
 interface Document {
   id?: string
@@ -68,6 +69,7 @@ const Editor = () => {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [bookParts, setBookParts] = useState<BookPart[]>([])
+  const setPartsCount = useEditorStore((state) => state.setPartsCount)
   const [currentPart, setCurrentPart] = useState<BookPart | null>(null)
   const editorRef = useRef<LexicalEditor | null>(null)
   const editorContainerRef = useRef<HTMLDivElement>(null)
@@ -84,6 +86,18 @@ const Editor = () => {
   const handleEditorRef = useCallback((editor: LexicalEditor) => {
     console.log('🔗 Editor reference received')
     editorRef.current = editor
+
+    // Scroll pozitsiyasini yuqoriga qaytarish
+    const resetScroll = () => {
+      if (editorContainerRef.current) {
+        editorContainerRef.current.scrollTop = 0
+      }
+    }
+
+    // Editor o'zgarishlarini tinglash
+    editor.registerUpdateListener(() => {
+      resetScroll()
+    })
 
     // Paste event'ini handle qilish
     editor.registerCommand(
@@ -135,6 +149,19 @@ const Editor = () => {
         updatedAt: currentDocument.updatedAt as Date,
       })
 
+      // Scroll pozitsiyasini yuqoriga qaytarish
+      setTimeout(() => {
+        if (editorContainerRef.current) {
+          const editorContent = editorContainerRef.current.querySelector('.editor-container')
+          if (editorContent) {
+            editorContent.scrollTo({
+              top: 0,
+              behavior: 'smooth',
+            })
+          }
+        }
+      }, 100)
+
       // Editor contentini yangilash
       editorRef.current?.update(() => {
         const root = $getRoot()
@@ -159,11 +186,21 @@ const Editor = () => {
         title: event.detail.currentPart.title,
         content: event.detail.currentPart.content,
       })
+      setPartsCount(event.detail.parts.length)
+    }
+
+    const handleClearBookParts = () => {
+      console.log('🗑 Clearing book parts')
+      setBookParts([])
+      setCurrentPart(null)
+      setPartsCount(0)
     }
 
     window.addEventListener('bookPartsCreated', handleBookParts as EventListener)
+    window.addEventListener('clearBookParts', handleClearBookParts as EventListener)
     return () => {
       window.removeEventListener('bookPartsCreated', handleBookParts as EventListener)
+      window.removeEventListener('clearBookParts', handleClearBookParts as EventListener)
     }
   }, [])
 
@@ -246,6 +283,9 @@ const Editor = () => {
 
     try {
       setIsSaving(true)
+
+      // Editorni read-only qilish
+      editorRef.current?.setEditable(false)
       // Firebase'ga saqlash
       const docId = await documentService.saveDocument({
         id: doc.id || '',
@@ -253,7 +293,7 @@ const Editor = () => {
         content: doc.content,
         userId: session.user.id,
         createdAt: doc.createdAt || new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
 
       // Yangi hujjat bo'lsa ID ni saqlaymiz
@@ -286,6 +326,7 @@ const Editor = () => {
       if (currentPart) {
         const updatedParts = bookParts.filter((part) => part.partNumber !== currentPart.partNumber)
         setBookParts(updatedParts)
+        setPartsCount(updatedParts.length)
 
         // Editor'ni yangilash
         editorRef.current?.update(() => {
@@ -332,6 +373,9 @@ const Editor = () => {
       toast.error('Hujjatni saqlashda xatolik yuz berdi')
     } finally {
       setIsSaving(false)
+
+      // Editorni yana yozish mumkin qilish
+      editorRef.current?.setEditable(true)
     }
   }
 
@@ -376,6 +420,19 @@ const Editor = () => {
       // Update document state
       setDocumentFile(doc)
 
+      // Scroll pozitsiyasini yuqoriga qaytarish
+      setTimeout(() => {
+        if (editorContainerRef.current) {
+          const editorContent = editorContainerRef.current.querySelector('.editor-container')
+          if (editorContent) {
+            editorContent.scrollTo({
+              top: 0,
+              behavior: 'smooth',
+            })
+          }
+        }
+      }, 100)
+
       // Update editor content
       editorRef.current.update(() => {
         const root = $getRoot()
@@ -405,8 +462,10 @@ const Editor = () => {
   useEffect(() => {
     const handleBookParts = (event: CustomEvent<{ parts: BookPart[]; currentPart: BookPart }>) => {
       const { parts, currentPart } = event.detail
+      console.log('parts',parts.length)
       setBookParts(parts)
       setCurrentPart(currentPart)
+      setPartsCount(parts.length)
 
       // Title va form state'ni yangilash
       setDocumentFile((prev) => ({ ...prev, title: currentPart.title }))
@@ -442,6 +501,17 @@ const Editor = () => {
         // Wait for editor to update
         setTimeout(() => {
           if (!editorRef.current) return
+
+          // Scroll pozitsiyasini yuqoriga qaytarish
+          if (editorContainerRef.current) {
+            const editorContent = editorContainerRef.current.querySelector('.editor-container')
+            if (editorContent) {
+              editorContent.scrollTo({
+                top: 0,
+                behavior: 'smooth',
+              })
+            }
+          }
 
           editorRef.current.update(() => {
             const root = $getRoot()
@@ -500,83 +570,86 @@ const Editor = () => {
   }, [loadDocument])
 
   return (
-    <div className="mx-4 mt-4 mb-0 max-h-[90vh] rounded-lg border bg-background shadow ">
-      <div className="flex flex-col h-full">
-        <Form {...form}>
-          <div className="flex items-center gap-4 px-4 py-2 border-b">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem className="flex-grow">
-                  <FormControl>
-                    <Input
-                      type="text"
-                      placeholder="Hujjat sarlavhasini kiriting"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e)
-                        setDocumentFile((prev) => ({ ...prev, title: e.target.value }))
-                        // Clear errors when input has value
-                        if (e.target.value.trim()) {
-                          form.clearErrors('title')
-                        }
-                      }}
-                      value={documentFile.title}
-                      className={cn(
-                        'max-w-sm',
-                        form.formState.errors.title && 'border-destructive focus-visible:ring-destructive',
-                      )}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs absolute" />
-                </FormItem>
-              )}
-            />
-            <div className="flex items-center gap-4 ml-auto">
-              {/* Total character count */}
-              <div className="text-sm text-muted-foreground">{formatCharCount(documentFile.content.length)}</div>
-              <Button onClick={() => saveDocument(documentFile)} disabled={isSaving}>
-                {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
-              </Button>
+    <div className="h-full flex flex-col rounded-lg border bg-background shadow overflow-hidden">
+      {/* Title va tablar uchun container */}
+      <div className="flex-shrink-0">
+        <div className="flex flex-col h-full">
+          <Form {...form}>
+            <div className="flex items-center gap-4 px-4 py-2.5 border-b">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem className="flex-grow">
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="Hujjat sarlavhasini kiriting"
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e)
+                          setDocumentFile((prev) => ({ ...prev, title: e.target.value }))
+                          // Clear errors when input has value
+                          if (e.target.value.trim()) {
+                            form.clearErrors('title')
+                          }
+                        }}
+                        value={documentFile.title}
+                        className={cn(
+                          'max-w-sm h-9',
+                          form.formState.errors.title && 'border-destructive focus-visible:ring-destructive',
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs absolute" />
+                  </FormItem>
+                )}
+              />
+              <div className="flex items-center gap-4 ml-auto">
+                {/* Total character count */}
+                <div className="text-sm text-muted-foreground">{formatCharCount(documentFile.content.length)}</div>
+                <Button onClick={() => saveDocument(documentFile)} disabled={isSaving}>
+                  {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+                </Button>
+              </div>
             </div>
-          </div>
-        </Form>
+          </Form>
 
-        {/* Kitob qismlari tabs */}
-        {bookParts.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-4 ml-5">
-            {bookParts.map((part) => (
-              <Button
-                key={part.partNumber}
-                variant={currentPart?.partNumber === part.partNumber ? 'default' : 'outline'}
-                onClick={() => switchPart(part)}
-                className="flex items-center gap-2"
-              >
-                <span>Part {part.partNumber}</span>
-                <span className="text-xs text-muted-foreground">({formatCharCount(part.content.length)})</span>
-              </Button>
-            ))}
-          </div>
-        )}
+          {/* Kitob qismlari tabs */}
+          {bookParts.length > 0 && (
+            <div className="flex flex-wrap gap-2 p-4 pb-0 pl-5 max-h-24 overflow-y-auto custom-scrollbar">
+              {bookParts.map((part) => (
+                <Button
+                  key={part.partNumber}
+                  variant={currentPart?.partNumber === part.partNumber ? 'default' : 'outline'}
+                  onClick={() => switchPart(part)}
+                  className="flex items-center gap-2"
+                >
+                  <span>Part {part.partNumber}</span>
+                  <span className="text-xs text-muted-foreground">({formatCharCount(part.content.length)})</span>
+                </Button>
+              ))}
+            </div>
+          )}
 
-        {/* Editor container */}
-        <div ref={editorContainerRef} className="relative w-full h-[calc(100vh-12rem)] overflow-hidden">
-          <div className="flex-grow overflow-auto">
-            <LexicalComposer initialConfig={editorConfig}>
-              <SharedAutocompleteContext>
-                <FloatingLinkContext>
-                  <div className="relative h-full w-full">
-                    <TooltipProvider>
-                      <div className="w-full h-full p-4 pb-0">
-                        <Plugins setEditor={handleEditorRef} />
-                      </div>
-                    </TooltipProvider>
-                  </div>
-                  <OnChangePlugin onChange={handleEditorChange} />
-                </FloatingLinkContext>
-              </SharedAutocompleteContext>
-            </LexicalComposer>
+          {/* Editor container */}
+          <div ref={editorContainerRef} className="flex-1 relative w-full overflow-hidden">
+            <div className="flex-grow overflow-auto">
+              <LexicalComposer initialConfig={editorConfig}>
+                <SharedAutocompleteContext>
+                  <FloatingLinkContext>
+                    <div className="relative h-full w-full overflow-hidden flex flex-col">
+                      <TooltipProvider>
+                        <div className="flex-grow w-full p-4 pb-0">
+                          <Plugins setEditor={handleEditorRef} isSaving={isSaving} />
+                        </div>
+                      </TooltipProvider>
+                    </div>
+                    <OnChangePlugin onChange={handleEditorChange} />
+                  </FloatingLinkContext>
+                </SharedAutocompleteContext>
+              </LexicalComposer>
+            </div>
           </div>
         </div>
       </div>

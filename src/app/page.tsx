@@ -65,16 +65,16 @@ export default function Home() {
         <header className="flex-shrink-0 bg-foreground dark:bg-background text-background dark:text-foreground w-full p-4">
           <Header />
         </header>
-        <main className="main-container w-full flex-grow">
-          <ResizablePanelGroup className="h-full" direction="horizontal">
-            <ResizablePanel defaultSize={60}>
-              <div className="">
+        <main className="main-container w-full flex-grow overflow-hidden">
+          <ResizablePanelGroup className="min-h-[calc(100vh-4rem)]" direction="horizontal">
+            <ResizablePanel defaultSize={60} className="overflow-hidden flex flex-col">
+              <div className="flex-1 overflow-hidden">
                 <Editor />
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={40}>
-              <div className="">
+            <ResizablePanel defaultSize={40} className="overflow-hidden flex flex-col">
+              <div className="flex-1 overflow-hidden">
                 <SearchSection />
               </div>
             </ResizablePanel>
