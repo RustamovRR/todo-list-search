@@ -1,6 +1,7 @@
 import { FirebaseOptions, getApp, getApps, initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import { getAnalytics } from 'firebase/analytics'
+import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 
 import { FIREBASE_CREDENTIALS } from '@/constants'
 const { API_KEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET, MESSAGING_SENDER_ID, APP_ID, MEASUREMENT_ID } =
@@ -23,6 +24,12 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
 const db = getFirestore(app)
 
 // Analytics
-const analytics = getAnalytics(app)
+let analytics: any
+if (typeof window !== 'undefined') {
+  analytics = getAnalytics(app)
+}
 
-export { db, analytics }
+const auth = getAuth(app)
+const googleProvider = new GoogleAuthProvider()
+
+export { db, analytics, auth, googleProvider }
