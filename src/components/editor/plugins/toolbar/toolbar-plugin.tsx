@@ -103,8 +103,8 @@ export function ToolbarPlugin() {
             <Separator orientation="vertical" className="h-8" />
 
             <BlockInsertPlugin>
-              <InsertImage />
-              <InsertInlineImage />
+              {/* <InsertImage /> */}
+              {/* <InsertInlineImage /> */}
               <InsertCollapsibleContainer />
               <InsertTable />
             </BlockInsertPlugin>
