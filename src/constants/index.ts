@@ -15,6 +15,4 @@ export const GOOGLE_CREDENTIALS = {
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
 }
 
-// export const MAX_CONTENT_LENGTH = 900000
-// export const MAX_CONTENT_LENGTH = 200000
-export const MAX_CONTENT_LENGTH = 20000
+export const MAX_CONTENT_LENGTH = 300_000

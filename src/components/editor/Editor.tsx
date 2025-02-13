@@ -194,6 +194,11 @@ const Editor = () => {
       setBookParts([])
       setCurrentPart(null)
       setPartsCount(0)
+      setDocumentFile({
+        title: '',
+        content: ''
+      })
+      form.reset()
     }
 
     window.addEventListener('bookPartsCreated', handleBookParts as EventListener)

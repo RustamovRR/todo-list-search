@@ -11,12 +11,15 @@ type Props = {
 
 export function ContentEditable({ placeholder, className, placeholderClassName }: Props): JSX.Element {
   const partsCount = useEditorStore((state) => state.partsCount)
-  console.log(partsCount)
   return (
     <LexicalContentEditable
       className={cn(
         'ContentEditable__root relative block overflow-auto p-4 focus:outline-none',
-        partsCount <= 4 ? 'h-[calc(100vh-16.5rem)]' : 'h-[calc(100vh-22.5rem)]',
+        partsCount >= 1
+          ? 'h-[calc(100vh-20rem)]'
+          : partsCount >= 5
+            ? 'h-[calc(100vh-22.5rem)]'
+            : 'h-[calc(100vh-16.5rem)]',
         className,
       )}
       aria-placeholder={placeholder}

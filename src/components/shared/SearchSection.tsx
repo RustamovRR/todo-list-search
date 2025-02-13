@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Loader2, ChevronUp, ChevronDown } from 'lucide-react'
@@ -12,6 +12,7 @@ import { Button } from '../ui/button'
 import { useSearchProgress } from '@/hooks/use-search-progress'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
+import { highlightSearchTerms, formatFullContent } from '@/lib/search-utils'
 import { documentService } from '@/lib/document-service'
 
 interface SearchResult {
@@ -76,98 +77,100 @@ export default function SearchSection() {
     setCurrentMatchIndex(0)
   }
 
-  // Highlight all occurrences of search terms in text
-  const highlightSearchTerms = (text: string, searchTerm: string) => {
-    if (!searchTerm.trim()) return text
-
-    const terms = searchTerm.trim().toLowerCase().split(/\s+/)
-    let highlightedText = text
-
-    terms.forEach((term) => {
-      if (term.length < 2) return // Skip short terms
-
-      const regex = new RegExp(`(${term})`, 'gi')
-      highlightedText = highlightedText.replace(regex, '<mark class="search-match">$1</mark>')
-    })
-
-    return highlightedText
+  // Highlight qilingan matnda nechta match borligini hisoblash
+  const countMatches = (content: string) => {
+    const matches = content.match(/<mark class="search-match">/g)
+    return matches ? matches.length : 0
   }
 
-  // Format full content with highlights and navigation
-  const formatFullContent = (content: string, searchTerm: string) => {
-    content = content.replace(/[\r\n\t\f\v ]+/g, ' ')
-    content = content.replace(/\s+/g, ' ').trim()
-
-    const sentences = content.split(/(?<=[.!?])\s+/)
-    let matchCount = 0
-
-    const highlightedSentences = sentences.map((sentence) => {
-      let highlightedText = sentence
-
-      if (searchTerm.trim()) {
-        const terms = searchTerm.trim().toLowerCase().split(/\s+/)
-        terms.forEach((term) => {
-          if (term.length < 2) return
-          const regex = new RegExp(`(${term})`, 'gi')
-          highlightedText = highlightedText.replace(regex, (match, p1) => {
-            matchCount++
-            return `<mark id="search-match-${matchCount}" class="search-match">${p1}</mark>`
-          })
-        })
-      }
-
-      return highlightedText
-    })
-
-    setTimeout(() => setTotalMatches(matchCount), 0)
-
-    return `
-      <div class="w-full">
-        <p class="text-justify whitespace-normal break-words leading-relaxed hyphens-auto">
-          ${highlightedSentences.join(' ')}
-        </p>
-      </div>
-    `
-  }
-
-  // Navigatsiya funksiyalari
-  const scrollToMatch = (index: number) => {
-    if (!previewRef.current) return
-
-    // Oldingi highlight'ni o'chirish
-    const prevMatches = previewRef.current.querySelectorAll('.search-match-focused')
-    prevMatches.forEach((match) => {
-      match.classList.remove('search-match-focused')
-    })
-
-    // Yangi match'ni topish va focus qilish
-    const match = previewRef.current.querySelector(`#search-match-${index + 1}`)
-    if (match) {
-      // Yangi highlight qo'shish
-      match.classList.add('search-match-focused')
-      // Smooth scroll
-      match.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      setCurrentMatchIndex(index)
+  useEffect(() => {
+    if (selectedResult && searchTerm) {
+      const highlightedContent = formatFullContent(selectedResult.content, searchTerm)
+      const matches = countMatches(highlightedContent)
+      setTotalMatches(matches)
     }
-  }
+  }, [selectedResult, searchTerm])
+
+
+
+  // Throttle scroll function
+  const throttledScroll = useCallback(
+    debounce((index: number) => {
+      const scrollViewport = previewRef.current?.querySelector('[data-radix-scroll-area-viewport]')
+      const matches = scrollViewport?.querySelectorAll('.search-match')
+      
+      if (scrollViewport && matches?.[index]) {
+        const scrollContainer = scrollViewport.parentElement
+        if (scrollContainer) {
+          const containerHeight = scrollContainer.getBoundingClientRect().height
+          const matchTop = matches[index].getBoundingClientRect().top
+          const containerTop = scrollContainer.getBoundingClientRect().top
+          const scrollTop = matchTop - containerTop - containerHeight / 2
+
+          // Remove previous focus
+          scrollViewport.querySelector('.search-match-focused')?.classList.remove('search-match-focused')
+          
+          // Scroll and focus
+          scrollViewport.scrollTop = scrollTop
+          matches[index].classList.add('search-match-focused')
+        }
+      }
+    }, 100),
+    [],
+  )
+
+  // Batch size for pagination
+  const MATCHES_PER_BATCH = 50
+  const [visibleMatches, setVisibleMatches] = useState<number>(MATCHES_PER_BATCH)
 
   const goToNextMatch = () => {
     const nextIndex = (currentMatchIndex + 1) % totalMatches
-    scrollToMatch(nextIndex)
+    
+    // Load more matches if we're near the end of current batch
+    if (nextIndex >= visibleMatches - 10 && visibleMatches < totalMatches) {
+      setVisibleMatches(prev => Math.min(prev + MATCHES_PER_BATCH, totalMatches))
+    }
+
+    setCurrentMatchIndex(nextIndex)
+    throttledScroll(nextIndex)
   }
 
   const goToPrevMatch = () => {
     const prevIndex = (currentMatchIndex - 1 + totalMatches) % totalMatches
-    scrollToMatch(prevIndex)
+    setCurrentMatchIndex(prevIndex)
+    throttledScroll(prevIndex)
   }
 
-  // Modal ochilganda birinchi elementga focus
+  // Modal ochilganda kontentni highlight qilish va scroll
   useEffect(() => {
-    if (isPreviewOpen && previewRef.current) {
-      // Birinchi elementga focus
-      scrollToMatch(0)
+    if (isPreviewOpen && selectedResult && searchTerm) {
+      // Highlight qilingan kontentni olish
+      const highlightedContent = formatFullContent(selectedResult.content, searchTerm)
+      const matches = countMatches(highlightedContent)
+      setTotalMatches(matches)
+      setVisibleMatches(MATCHES_PER_BATCH)
+      setCurrentMatchIndex(0)
+
+      // DOM yangilanishini kutish
+      setTimeout(() => {
+        const scrollViewport = previewRef.current?.querySelector('[data-radix-scroll-area-viewport]')
+        const firstMatch = scrollViewport?.querySelector('.search-match')
+        
+        if (scrollViewport && firstMatch) {
+          const scrollContainer = scrollViewport.parentElement
+          if (scrollContainer) {
+            const containerHeight = scrollContainer.getBoundingClientRect().height
+            const matchTop = firstMatch.getBoundingClientRect().top
+            const containerTop = scrollContainer.getBoundingClientRect().top
+            const scrollTop = matchTop - containerTop - containerHeight / 2
+
+            scrollViewport.scrollTop = scrollTop
+            firstMatch.classList.add('search-match-focused')
+          }
+        }
+      }, 100)
     }
-  }, [isPreviewOpen])
+  }, [isPreviewOpen, selectedResult, searchTerm])
 
   console.log('rerendering')
 
@@ -250,7 +253,7 @@ export default function SearchSection() {
                   <Button
                     variant="outline"
                     onClick={goToPrevMatch}
-                    disabled={totalMatches <= 1}
+                    disabled={totalMatches < 1}
                     className="w-8 h-8 rounded-full"
                   >
                     <ChevronUp className="h-4 w-4" />
@@ -263,7 +266,7 @@ export default function SearchSection() {
                   <Button
                     variant="outline"
                     onClick={goToNextMatch}
-                    disabled={totalMatches <= 1}
+                    disabled={totalMatches < 1}
                     className="w-8 h-8 rounded-full"
                   >
                     <ChevronDown className="h-4 w-4" />
@@ -274,13 +277,19 @@ export default function SearchSection() {
           </DialogHeader>
 
           {selectedResult && (
-            <ScrollArea className="h-[calc(85vh-8rem)] pr-4">
+            <ScrollArea className="h-[calc(85vh-8rem)] pr-4" ref={previewRef}>
               <div className="w-full max-w-none">
                 <div
-                  ref={previewRef}
                   className="prose prose-sm dark:prose-invert max-w-none"
                   dangerouslySetInnerHTML={{
-                    __html: formatFullContent(selectedResult.content, searchTerm),
+                    __html: `<div class="w-full">
+                      <p class="text-justify whitespace-normal break-words leading-relaxed hyphens-auto">
+                        ${formatFullContent(selectedResult.content, searchTerm)
+                          .split('<mark class="search-match">')
+                          .slice(0, visibleMatches)
+                          .join('<mark class="search-match">')}
+                      </p>
+                    </div>`
                   }}
                 />
               </div>
