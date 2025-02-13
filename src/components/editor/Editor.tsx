@@ -29,6 +29,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { cn } from '@/lib/utils'
 import { editorConfig } from './editorConfig'
 import { useSession } from 'next-auth/react'
+import { useDocumentStore } from '@/store/document'
 
 interface Document {
   id?: string
@@ -60,6 +61,7 @@ const formatCharCount = (count: number): string => {
 
 const Editor = () => {
   const { data: session } = useSession()
+  const currentDocument = useDocumentStore((state) => state.currentDocument)
   const [documentFile, setDocumentFile] = useState<Document>({
     title: '',
     content: '',
@@ -121,6 +123,32 @@ const Editor = () => {
     }
   }, [currentPart?.partNumber])
 
+  // currentDocument o'zgarganda editorni yangilash
+  useEffect(() => {
+    if (currentDocument) {
+      console.log('📄 Current document changed:', currentDocument)
+      setDocumentFile({
+        id: currentDocument.id,
+        title: currentDocument.title,
+        content: currentDocument.content,
+        createdAt: currentDocument.createdAt as Date,
+        updatedAt: currentDocument.updatedAt as Date,
+      })
+
+      // Editor contentini yangilash
+      editorRef.current?.update(() => {
+        const root = $getRoot()
+        root.clear()
+        const paragraphNode = $createParagraphNode()
+        paragraphNode.append($createTextNode(currentDocument.content))
+        root.append(paragraphNode)
+      })
+
+      // Form title'ni yangilash
+      form.setValue('title', currentDocument.title)
+    }
+  }, [currentDocument, form])
+
   // Book parts eventini tinglash
   useEffect(() => {
     const handleBookParts = (event: CustomEvent<{ parts: BookPart[]; currentPart: BookPart }>) => {
@@ -163,7 +191,7 @@ const Editor = () => {
 
         // Kontentni paragraflar bo'yicha qo'shamiz
         const paragraphs = part.content.split('\n')
-        paragraphs.forEach(text => {
+        paragraphs.forEach((text) => {
           if (text.trim()) {
             const paragraph = $createParagraphNode()
             paragraph.append($createTextNode(text))
@@ -220,9 +248,12 @@ const Editor = () => {
       setIsSaving(true)
       // Firebase'ga saqlash
       const docId = await documentService.saveDocument({
-        ...doc,
+        id: doc.id || '',
+        title: doc.title,
+        content: doc.content,
         userId: session.user.id,
-        updatedAt: new Date(),
+        createdAt: doc.createdAt || new Date(),
+        updatedAt: new Date()
       })
 
       // Yangi hujjat bo'lsa ID ni saqlaymiz
@@ -238,11 +269,24 @@ const Editor = () => {
 
       setDocumentFile((prev) => ({ ...prev, id: docId }))
       toast.success('Hujjat muvaffaqiyatli saqlandi')
+
+      // Editor va form'ni tozalash
+      editorRef.current?.update(() => {
+        const root = $getRoot()
+        root.clear()
+        const paragraph = $createParagraphNode()
+        root.append(paragraph)
+      })
+      form.reset()
+      setDocumentFile({
+        title: '',
+        content: '',
+      })
       // Saqlangan partni o'chirish va editor'ni yangilash
       if (currentPart) {
-        const updatedParts = bookParts.filter(part => part.partNumber !== currentPart.partNumber)
+        const updatedParts = bookParts.filter((part) => part.partNumber !== currentPart.partNumber)
         setBookParts(updatedParts)
-        
+
         // Editor'ni yangilash
         editorRef.current?.update(() => {
           const root = $getRoot()
@@ -252,8 +296,8 @@ const Editor = () => {
           if (updatedParts.length > 0) {
             const nextPart = updatedParts[0]
             const paragraphs = nextPart.content.split('\n')
-            
-            paragraphs.forEach(text => {
+
+            paragraphs.forEach((text) => {
               if (text.trim()) {
                 const paragraph = $createParagraphNode()
                 paragraph.append($createTextNode(text))
@@ -363,9 +407,9 @@ const Editor = () => {
       const { parts, currentPart } = event.detail
       setBookParts(parts)
       setCurrentPart(currentPart)
-      
+
       // Title va form state'ni yangilash
-      setDocumentFile(prev => ({ ...prev, title: currentPart.title }))
+      setDocumentFile((prev) => ({ ...prev, title: currentPart.title }))
       form.setValue('title', currentPart.title)
     }
 

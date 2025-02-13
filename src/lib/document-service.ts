@@ -1,13 +1,13 @@
 import FlexSearch from 'flexsearch'
 import { nanoid } from 'nanoid'
 import { db } from './firebase'
-import { collection, doc, getDocs, setDoc, getDoc, query, orderBy, where, deleteDoc } from 'firebase/firestore'
+import { collection, doc, getDocs, setDoc, getDoc, query, where, deleteDoc } from 'firebase/firestore'
 import { DocumentType, SearchResultType } from '@/types'
 
 export class DocumentService {
   private index: any
 
-  constructor() {
+  private initializeIndex() {
     // @ts-ignore - FlexSearch types are not complete
     this.index = new FlexSearch.Document({
       document: {
@@ -20,16 +20,18 @@ export class DocumentService {
     })
   }
 
+  constructor() {
+    this.initializeIndex()
+  }
+
   async saveDocument(document: DocumentType): Promise<string> {
     try {
       const docId = document.id || nanoid()
       const documentToSave = {
         ...document,
         id: docId,
-        organizationId: document.organizationId || '',
-        uploadedBy: document.uploadedBy || document.userId,
         createdAt: document.createdAt || new Date(),
-        updatedAt: document.updatedAt || new Date()
+        updatedAt: document.updatedAt || new Date(),
       }
 
       // Save to Firebase
@@ -40,7 +42,14 @@ export class DocumentService {
       }
       await setDoc(doc(db, 'documents', docId), documentData)
 
+      // Agar mavjud hujjat bo'lsa, avval indeksdan o'chiramiz
+      if (document.id) {
+        console.log('🗑️ Removing old document from index:', document.id)
+        this.index.remove(document.id)
+      }
+
       // Add to FlexSearch index
+      console.log('📝 Adding document to index:', docId)
       this.index.add({
         id: docId,
         title: document.title,
@@ -66,8 +75,6 @@ export class DocumentService {
           title: data.title,
           content: data.content,
           userId: data.userId,
-          organizationId: data.organizationId || '',
-          uploadedBy: data.uploadedBy || data.userId,
           createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
           updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         }
@@ -87,19 +94,43 @@ export class DocumentService {
         : query(collection(db, 'documents'))
       const querySnapshot = await getDocs(q)
 
-      return querySnapshot.docs.map((doc) => {
+      // Avval indeksni tozalaymiz
+      console.log('🗑️ Clearing FlexSearch index')
+      this.index = new FlexSearch.Document({
+        document: {
+          id: 'id',
+          index: ['content', 'title'],
+          store: ['content', 'title'],
+        },
+        tokenize: 'forward',
+        cache: true,
+      })
+
+      const documents: DocumentType[] = []
+
+      querySnapshot.forEach((doc) => {
         const data = doc.data()
-        return {
+        const document = {
           id: doc.id,
           title: data.title,
           content: data.content,
           userId: data.userId,
-          organizationId: data.organizationId || '',
-          uploadedBy: data.uploadedBy || data.userId,
           createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
           updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         }
+
+        // Add to FlexSearch index
+        console.log('📝 Adding document to index:', doc.id)
+        this.index.add({
+          id: doc.id,
+          title: data.title,
+          content: data.content,
+        })
+
+        documents.push(document)
       })
+
+      return documents
     } catch (error) {
       console.error('Error loading documents:', error)
       throw error

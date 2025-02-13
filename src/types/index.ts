@@ -22,8 +22,6 @@ export interface DocumentType {
   title: string
   content: string
   userId: string
-  organizationId: string
-  uploadedBy: string
   createdAt: Date
   updatedAt: Date
 }

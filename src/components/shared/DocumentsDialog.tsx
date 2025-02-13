@@ -131,12 +131,7 @@ export function DocumentsDialog({ open, onOpenChange }: DocumentsDialogProps) {
       </AlertDialog>
 
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
-          className="max-w-4xl max-h-[85vh]"
-          onInteractOutside={(e) => {
-            e.preventDefault()
-          }}
-        >
+        <DialogContent className="max-w-4xl max-h-[85vh]">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-semibold flex items-center gap-2">
@@ -182,7 +177,10 @@ export function DocumentsDialog({ open, onOpenChange }: DocumentsDialogProps) {
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
-                      <Button className="bg-green-600 hover:bg-green-600/90 text-white" onClick={() => handleOpenDocument(doc)}>
+                      <Button
+                        className="bg-green-600 hover:bg-green-600/90 text-white"
+                        onClick={() => handleOpenDocument(doc)}
+                      >
                         O'zgartirish
                       </Button>
                       <Button variant="destructive" onClick={() => setDeleteId(doc.id)}>
