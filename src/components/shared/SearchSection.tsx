@@ -91,14 +91,12 @@ export default function SearchSection() {
     }
   }, [selectedResult, searchTerm])
 
-
-
   // Throttle scroll function
   const throttledScroll = useCallback(
     debounce((index: number) => {
       const scrollViewport = previewRef.current?.querySelector('[data-radix-scroll-area-viewport]')
       const matches = scrollViewport?.querySelectorAll('.search-match')
-      
+
       if (scrollViewport && matches?.[index]) {
         const scrollContainer = scrollViewport.parentElement
         if (scrollContainer) {
@@ -109,7 +107,7 @@ export default function SearchSection() {
 
           // Remove previous focus
           scrollViewport.querySelector('.search-match-focused')?.classList.remove('search-match-focused')
-          
+
           // Scroll and focus
           scrollViewport.scrollTop = scrollTop
           matches[index].classList.add('search-match-focused')
@@ -125,10 +123,10 @@ export default function SearchSection() {
 
   const goToNextMatch = () => {
     const nextIndex = (currentMatchIndex + 1) % totalMatches
-    
+
     // Load more matches if we're near the end of current batch
     if (nextIndex >= visibleMatches - 10 && visibleMatches < totalMatches) {
-      setVisibleMatches(prev => Math.min(prev + MATCHES_PER_BATCH, totalMatches))
+      setVisibleMatches((prev) => Math.min(prev + MATCHES_PER_BATCH, totalMatches))
     }
 
     setCurrentMatchIndex(nextIndex)
@@ -155,7 +153,7 @@ export default function SearchSection() {
       setTimeout(() => {
         const scrollViewport = previewRef.current?.querySelector('[data-radix-scroll-area-viewport]')
         const firstMatch = scrollViewport?.querySelector('.search-match')
-        
+
         if (scrollViewport && firstMatch) {
           const scrollContainer = scrollViewport.parentElement
           if (scrollContainer) {
@@ -171,8 +169,6 @@ export default function SearchSection() {
       }, 100)
     }
   }, [isPreviewOpen, selectedResult, searchTerm])
-
-  console.log('rerendering')
 
   return (
     <div className="h-full flex flex-col rounded-lg border bg-background shadow">
@@ -289,7 +285,7 @@ export default function SearchSection() {
                           .slice(0, visibleMatches)
                           .join('<mark class="search-match">')}
                       </p>
-                    </div>`
+                    </div>`,
                   }}
                 />
               </div>
