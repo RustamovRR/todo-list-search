@@ -22,7 +22,6 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 kun
   },
-  secret: GOOGLE_CREDENTIALS.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
       clientId: GOOGLE_CREDENTIALS.GOOGLE_CLIENT_ID!,

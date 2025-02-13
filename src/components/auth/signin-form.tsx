@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Icons } from '@/components/icons'
 import toast from 'react-hot-toast'
+import { GoogleSignInButton } from './google-signin-button'
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -42,18 +43,10 @@ export function SignInForm({ className, ...props }: UserAuthFormProps) {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signIn('google', {
-        callbackUrl: searchParams?.get('from') || '/',
-      })
-    } catch (error) {
-      toast.error('Google orqali kirishda xatolik yuz berdi')
-    }
-  }
+
 
   return (
-    <div className="grid gap-6" {...props}>
+    <div className="w-full grid gap-6" {...props}>
       <form onSubmit={onSubmit}>
         <div className="grid gap-4">
           <div className="grid gap-1">
@@ -92,14 +85,7 @@ export function SignInForm({ className, ...props }: UserAuthFormProps) {
           <span className="bg-background px-2 text-muted-foreground">Yoki</span>
         </div>
       </div>
-      <Button variant="outline" type="button" onClick={handleGoogleSignIn} disabled={isLoading}>
-        {isLoading ? (
-          <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Icons.google className="mr-2 h-4 w-4" />
-        )}
-        Google orqali kirish
-      </Button>
+      <GoogleSignInButton />
     </div>
   )
 }
