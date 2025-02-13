@@ -1,7 +1,7 @@
 import FlexSearch from 'flexsearch'
 import { nanoid } from 'nanoid'
 import { db } from './firebase'
-import { collection, doc, getDocs, setDoc, getDoc, query, orderBy, where } from 'firebase/firestore'
+import { collection, doc, getDocs, setDoc, getDoc, query, orderBy, where, deleteDoc } from 'firebase/firestore'
 import { DocumentType, SearchResultType } from '@/types'
 
 export class DocumentService {
@@ -185,6 +185,17 @@ export class DocumentService {
     const start = Math.max(0, offset - contextLength / 2)
     const end = Math.min(content.length, offset + contextLength / 2)
     return content.slice(start, end) + (end < content.length ? '...' : '')
+  }
+
+  async deleteDocument(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'documents', id))
+      // FlexSearch indeksidan ham o'chiramiz
+      this.index.remove(id)
+    } catch (error) {
+      console.error('Error deleting document:', error)
+      throw error
+    }
   }
 }
 
