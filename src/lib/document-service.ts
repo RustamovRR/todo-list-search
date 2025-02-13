@@ -1,29 +1,8 @@
 import FlexSearch from 'flexsearch'
 import { nanoid } from 'nanoid'
 import { db } from './firebase'
-import { collection, doc, getDocs, setDoc, getDoc, query, orderBy, limit } from 'firebase/firestore'
-
-interface Document {
-  id?: string
-  title: string
-  content: string
-  index?: any
-  createdAt?: Date
-  updatedAt?: Date
-}
-
-interface SearchResult {
-  id: string
-  title: string
-  content: string
-  context: string
-  position: {
-    paragraph: number
-    offset: number
-  }
-  highlight: string
-  score: number
-}
+import { collection, doc, getDocs, setDoc, getDoc, query, orderBy, where } from 'firebase/firestore'
+import { DocumentType, SearchResultType } from '@/types'
 
 export class DocumentService {
   private index: any
@@ -34,26 +13,39 @@ export class DocumentService {
       document: {
         id: 'id',
         index: ['content', 'title'],
-        store: ['content', 'title']
+        store: ['content', 'title'],
       },
       tokenize: 'forward',
-      cache: true
+      cache: true,
     })
   }
 
-  async saveDocument(document: Document): Promise<string> {
+  async saveDocument(document: DocumentType): Promise<string> {
     try {
       const docId = document.id || nanoid()
+      const documentToSave = {
+        ...document,
+        id: docId,
+        organizationId: document.organizationId || '',
+        uploadedBy: document.uploadedBy || document.userId,
+        createdAt: document.createdAt || new Date(),
+        updatedAt: document.updatedAt || new Date()
+      }
 
-      // Save to Firebase without index
-      await setDoc(doc(db, 'documents', docId), {
+      // Save to Firebase
+      const documentData = {
+        ...documentToSave,
+        createdAt: documentToSave.createdAt.toISOString(),
+        updatedAt: documentToSave.updatedAt.toISOString(),
+      }
+      await setDoc(doc(db, 'documents', docId), documentData)
+
+      // Add to FlexSearch index
+      this.index.add({
+        id: docId,
         title: document.title,
         content: document.content,
-        createdAt: document.createdAt?.toISOString() || new Date().toISOString(),
-        updatedAt: document.updatedAt?.toISOString() || new Date().toISOString()
       })
-
-
 
       return docId
     } catch (error) {
@@ -62,7 +54,7 @@ export class DocumentService {
     }
   }
 
-  async loadDocument(id: string): Promise<Document | null> {
+  async loadDocument(id: string): Promise<DocumentType | null> {
     try {
       const docRef = doc(db, 'documents', id)
       const docSnap = await getDoc(docRef)
@@ -73,8 +65,11 @@ export class DocumentService {
           id: docSnap.id,
           title: data.title,
           content: data.content,
-          createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
-          updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined
+          userId: data.userId,
+          organizationId: data.organizationId || '',
+          uploadedBy: data.uploadedBy || data.userId,
+          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         }
       }
 
@@ -85,19 +80,24 @@ export class DocumentService {
     }
   }
 
-  async loadDocuments(): Promise<Document[]> {
+  async loadDocuments(userId?: string): Promise<DocumentType[]> {
     try {
-      const q = query(collection(db, 'documents'), orderBy('createdAt', 'desc'))
+      const q = userId
+        ? query(collection(db, 'documents'), where('userId', '==', userId))
+        : query(collection(db, 'documents'))
       const querySnapshot = await getDocs(q)
 
-      return querySnapshot.docs.map(doc => {
+      return querySnapshot.docs.map((doc) => {
         const data = doc.data()
         return {
           id: doc.id,
           title: data.title,
           content: data.content,
-          createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
-          updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined
+          userId: data.userId,
+          organizationId: data.organizationId || '',
+          uploadedBy: data.uploadedBy || data.userId,
+          createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         }
       })
     } catch (error) {
@@ -106,8 +106,23 @@ export class DocumentService {
     }
   }
 
-  async searchDocuments(query: string): Promise<SearchResult[]> {
+  async searchDocuments(query: string, userId?: string): Promise<SearchResultType[]> {
     try {
+      if (!userId) return []
+
+      // Foydalanuvchining hujjatlarini Firestore'dan olamiz
+      const documents = await this.loadDocuments(userId)
+
+      // Hujjatlarni indekslaymiz
+      this.index.remove('*') // Clear index
+      for (const doc of documents) {
+        this.index.add({
+          id: doc.id,
+          title: doc.title,
+          content: doc.content,
+        })
+      }
+
       // Document index uchun qidiruv sintaksisi
       const results = (await this.index.searchAsync(query, {
         field: ['content', 'title'], // qaysi maydonlardan qidirish
@@ -115,7 +130,7 @@ export class DocumentService {
         suggest: true,
       })) as Array<{ field: string; result: string[] }>
 
-      const searchResults: SearchResult[] = []
+      const searchResults: SearchResultType[] = []
 
       for (const { field, result } of results) {
         for (const docId of result) {

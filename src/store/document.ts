@@ -1,10 +1,9 @@
-// src/store/document.ts
+import { DocumentType } from '@/types'
 import { create } from 'zustand'
-import { Document } from '@/lib/db'
 
 interface DocumentStore {
-  currentDocument: Document | null
-  setCurrentDocument: (doc: Document | null) => void
+  currentDocument: DocumentType | null
+  setCurrentDocument: (doc: DocumentType | null) => void
 }
 
 export const useDocumentStore = create<DocumentStore>((set) => ({

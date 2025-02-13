@@ -28,6 +28,7 @@ import * as z from 'zod'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { cn } from '@/lib/utils'
 import { editorConfig } from './editorConfig'
+import { useSession } from 'next-auth/react'
 
 interface Document {
   id?: string
@@ -58,6 +59,7 @@ const formatCharCount = (count: number): string => {
 }
 
 const Editor = () => {
+  const { data: session } = useSession()
   const [documentFile, setDocumentFile] = useState<Document>({
     title: '',
     content: '',
@@ -172,6 +174,11 @@ const Editor = () => {
 
   // Save document
   const saveDocument = async (doc: Document) => {
+    if (!session?.user?.id) {
+      toast.error('Hujjatni saqlash uchun tizimga kirishingiz kerak')
+      return
+    }
+
     const result = await form.trigger('title')
     if (!result) {
       return
@@ -194,12 +201,13 @@ const Editor = () => {
       // Firebase'ga saqlash
       const docId = await documentService.saveDocument({
         ...doc,
-        updatedAt: new Date()
+        userId: session.user.id,
+        updatedAt: new Date(),
       })
 
       // Yangi hujjat bo'lsa ID ni saqlaymiz
       if (!doc.id) {
-        setDocumentFile(prev => ({ ...prev, id: docId }))
+        setDocumentFile((prev) => ({ ...prev, id: docId }))
       }
 
       console.log('✅ Document Saved:', {
@@ -415,9 +423,7 @@ const Editor = () => {
             />
             <div className="flex items-center gap-4 ml-auto">
               {/* Total character count */}
-              <div className="text-sm text-muted-foreground">
-                {formatCharCount(documentFile.content.length)}
-              </div>
+              <div className="text-sm text-muted-foreground">{formatCharCount(documentFile.content.length)}</div>
               <Button onClick={() => saveDocument(documentFile)} disabled={isSaving}>
                 {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
               </Button>
@@ -436,9 +442,7 @@ const Editor = () => {
                 className="flex items-center gap-2"
               >
                 <span>Part {part.partNumber}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({formatCharCount(part.content.length)})
-                </span>
+                <span className="text-xs text-muted-foreground">({formatCharCount(part.content.length)})</span>
               </Button>
             ))}
           </div>

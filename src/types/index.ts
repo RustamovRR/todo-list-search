@@ -17,12 +17,26 @@ export interface Organization {
   updatedAt: Date
 }
 
-export interface Document {
+export interface DocumentType {
   id: string
   title: string
   content: string
+  userId: string
   organizationId: string
   uploadedBy: string
   createdAt: Date
   updatedAt: Date
+}
+
+export interface SearchResultType {
+  id: string
+  title: string
+  content: string
+  context: string
+  score: number
+  position: {
+    paragraph: number
+    offset: number
+  }
+  highlight: string
 }

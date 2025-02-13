@@ -1,4 +1,4 @@
-// 'use client'
+'use client'
 
 import SearchSection from '@/components/shared/SearchSection'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'

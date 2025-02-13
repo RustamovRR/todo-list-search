@@ -5,12 +5,14 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Loader2, ChevronUp, ChevronDown } from 'lucide-react'
 import { debounce } from 'lodash-es'
-import { documentDB } from '@/lib/db'
 import { Dialog, DialogContent, DialogHeader } from '../ui/dialog'
 import { DialogTitle } from '@radix-ui/react-dialog'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { useSearchProgress } from '@/hooks/use-search-progress'
+import { useSession } from 'next-auth/react'
+import toast from 'react-hot-toast'
+import { documentService } from '@/lib/document-service'
 
 interface SearchResult {
   id: string
@@ -26,6 +28,7 @@ interface SearchResult {
 }
 
 export default function SearchSection() {
+  const { data: session } = useSession()
   const [searchTerm, setSearchTerm] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null)
@@ -45,9 +48,14 @@ export default function SearchSection() {
       return
     }
 
+    if (!session?.user?.id) {
+      toast.error('Qidiruv uchun tizimga kirishingiz kerak')
+      return
+    }
+
     startLoading('Searching...')
     try {
-      const searchResults = await documentDB.searchDocuments(term)
+      const searchResults = await documentService.searchDocuments(term, session.user.id)
       setResults(searchResults)
     } catch (error) {
       console.error('Search Error:', error)
