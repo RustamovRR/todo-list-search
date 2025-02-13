@@ -141,7 +141,7 @@ export function DocumentsDialog({ open, onOpenChange }: DocumentsDialogProps) {
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-semibold flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Mening hujjatlarim
+                Barcha fayllar
               </DialogTitle>
               <div className="relative w-64 mr-12">
                 <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -182,11 +182,7 @@ export function DocumentsDialog({ open, onOpenChange }: DocumentsDialogProps) {
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="secondary"
-                        className="bg-green-600 hover:bg-green-500 text-white"
-                        onClick={() => handleOpenDocument(doc)}
-                      >
+                      <Button className="bg-green-600 hover:bg-green-600/90 text-white" onClick={() => handleOpenDocument(doc)}>
                         O'zgartirish
                       </Button>
                       <Button variant="destructive" onClick={() => setDeleteId(doc.id)}>
