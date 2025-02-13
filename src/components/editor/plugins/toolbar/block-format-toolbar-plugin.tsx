@@ -13,39 +13,44 @@ export function BlockFormatDropDown({ children }: { children: React.ReactNode })
   const { activeEditor, blockType, setBlockType } = useToolbarContext()
 
   function $updateToolbar(selection: BaseSelection) {
-    if ($isRangeSelection(selection)) {
-      activeEditor.update(() => {
-        const anchorNode = selection.anchor.getNode()
-        let element =
-          anchorNode.getKey() === 'root'
-            ? anchorNode
-            : $findMatchingParent(anchorNode, (e) => {
-                const parent = e.getParent()
-                return parent !== null && $isRootOrShadowRoot(parent)
-              })
+    if (!activeEditor || !$isRangeSelection(selection)) {
+      return
+    }
 
-        if (element === null) {
-          element = anchorNode.getTopLevelElementOrThrow()
-        }
+    activeEditor.getEditorState().read(() => {
+      const anchorNode = selection.anchor.getNode()
+      if (!anchorNode || !anchorNode.getKey) {
+        return
+      }
 
-        const elementKey = element.getKey()
-        const elementDOM = activeEditor.getElementByKey(elementKey)
+      let element =
+        anchorNode.getKey() === 'root'
+          ? anchorNode
+          : $findMatchingParent(anchorNode, (e) => {
+              const parent = e.getParent()
+              return parent !== null && $isRootOrShadowRoot(parent)
+            })
 
-        if (elementDOM !== null) {
-          // setSelectedElementKey(elementKey);
-          if ($isListNode(element)) {
-            const parentList = $getNearestNodeOfType<ListNode>(anchorNode, ListNode)
-            const type = parentList ? parentList.getListType() : element.getListType()
-            setBlockType(type)
-          } else {
-            const type = $isHeadingNode(element) ? element.getTag() : element.getType()
-            if (type in blockTypeToBlockName) {
-              setBlockType(type as keyof typeof blockTypeToBlockName)
-            }
+      if (element === null) {
+        element = anchorNode.getTopLevelElementOrThrow()
+      }
+
+      const elementKey = element.getKey()
+      const elementDOM = activeEditor.getElementByKey(elementKey)
+
+      if (elementDOM !== null) {
+        if ($isListNode(element)) {
+          const parentList = $getNearestNodeOfType<ListNode>(anchorNode, ListNode)
+          const type = parentList ? parentList.getListType() : element.getListType()
+          setBlockType(type)
+        } else {
+          const type = $isHeadingNode(element) ? element.getTag() : element.getType()
+          if (type in blockTypeToBlockName) {
+            setBlockType(type as keyof typeof blockTypeToBlockName)
           }
         }
-      })
-    }
+      }
+    })
   }
 
   useUpdateToolbarHandler($updateToolbar)

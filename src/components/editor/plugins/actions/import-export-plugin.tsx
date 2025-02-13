@@ -3,7 +3,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $createParagraphNode, $createTextNode, $getRoot, $isRootNode } from 'lexical'
 import { DownloadIcon, LoaderIcon, UploadIcon } from 'lucide-react'
 import mammoth from 'mammoth'
-import { useState, useCallback } from 'react'
+import { useState,  } from 'react'
 import { pdfjs } from 'react-pdf'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
@@ -151,7 +151,7 @@ export function ImportExportPlugin() {
         const event = new CustomEvent('bookPartsCreated', {
           detail: {
             parts: bookParts,
-            currentPart: firstPart,
+            currentPart: firstPart
           },
         })
         window.dispatchEvent(event)

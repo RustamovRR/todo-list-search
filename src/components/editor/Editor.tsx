@@ -148,28 +148,48 @@ const Editor = () => {
 
     // Yangi qismga o'tamiz
     setCurrentPart(part)
-    setDocumentFile((prev) => ({
-      ...prev,
+    setDocumentFile({
       title: part.title,
       content: part.content,
-    }))
-
-    // Editor kontentini yangilaymiz
-    editorRef.current?.update(() => {
-      const root = $getRoot()
-      root.clear()
-      root.append($createParagraphNode().append($createTextNode(part.content)))
     })
+    form.setValue('title', part.title)
 
-    // Scroll'ni resetlaymiz
-    requestAnimationFrame(() => {
-      if (editorContainerRef.current) {
-        const editorContent = editorContainerRef.current.querySelector('.editor-container')
-        if (editorContent) {
-          editorContent.scrollTop = 0
+    // Editor state'ini yangilash
+    if (editorRef.current) {
+      const editor = editorRef.current
+      editor.update(() => {
+        const root = $getRoot()
+        root.clear()
+
+        // Kontentni paragraflar bo'yicha qo'shamiz
+        const paragraphs = part.content.split('\n')
+        paragraphs.forEach(text => {
+          if (text.trim()) {
+            const paragraph = $createParagraphNode()
+            paragraph.append($createTextNode(text))
+            root.append(paragraph)
+          }
+        })
+
+        // Selection'ni birinchi paragrafga o'rnatamiz
+        const firstParagraph = root.getFirstChild()
+        if (firstParagraph) {
+          firstParagraph.selectStart()
         }
-      }
-    })
+      })
+
+      // Editor'ni focus qilish
+      setTimeout(() => {
+        editor.focus()
+        // Scroll'ni tepaga qaytarish
+        if (editorContainerRef.current) {
+          editorContainerRef.current.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+          })
+        }
+      }, 50)
+    }
   }
 
   // Save document
@@ -218,21 +238,51 @@ const Editor = () => {
 
       setDocumentFile((prev) => ({ ...prev, id: docId }))
       toast.success('Hujjat muvaffaqiyatli saqlandi')
-      // State ni tozalash
-      setDocumentFile({
-        title: '',
-        content: '',
-      })
-      form.reset()
+      // Saqlangan partni o'chirish va editor'ni yangilash
+      if (currentPart) {
+        const updatedParts = bookParts.filter(part => part.partNumber !== currentPart.partNumber)
+        setBookParts(updatedParts)
+        
+        // Editor'ni yangilash
+        editorRef.current?.update(() => {
+          const root = $getRoot()
+          root.clear()
 
-      // Editorni tozalash
-      editorRef.current?.update(() => {
-        const root = $getRoot()
-        root.clear()
-        const paragraph = $createParagraphNode()
-        paragraph.append($createTextNode(''))
-        root.append(paragraph)
-      })
+          // Agar keyingi part bo'lsa, uning kontentini o'rnatish
+          if (updatedParts.length > 0) {
+            const nextPart = updatedParts[0]
+            const paragraphs = nextPart.content.split('\n')
+            
+            paragraphs.forEach(text => {
+              if (text.trim()) {
+                const paragraph = $createParagraphNode()
+                paragraph.append($createTextNode(text))
+                root.append(paragraph)
+              }
+            })
+
+            // State'larni yangilash
+            setCurrentPart(nextPart)
+            setDocumentFile({
+              title: nextPart.title,
+              content: nextPart.content,
+            })
+            form.setValue('title', nextPart.title)
+          } else {
+            // Bo'sh editor va state'larni tozalash
+            const paragraph = $createParagraphNode()
+            paragraph.append($createTextNode(''))
+            root.append(paragraph)
+
+            setCurrentPart(null)
+            setDocumentFile({
+              title: '',
+              content: '',
+            })
+            form.reset()
+          }
+        })
+      }
     } catch (error) {
       console.error('❌ Save Error:', error)
       toast.error('Hujjatni saqlashda xatolik yuz berdi')
@@ -306,6 +356,24 @@ const Editor = () => {
       toast.error('Hujjatni yuklashda xatolik yuz berdi')
     }
   }, [])
+
+  // Handle book parts created
+  useEffect(() => {
+    const handleBookParts = (event: CustomEvent<{ parts: BookPart[]; currentPart: BookPart }>) => {
+      const { parts, currentPart } = event.detail
+      setBookParts(parts)
+      setCurrentPart(currentPart)
+      
+      // Title va form state'ni yangilash
+      setDocumentFile(prev => ({ ...prev, title: currentPart.title }))
+      form.setValue('title', currentPart.title)
+    }
+
+    window.addEventListener('bookPartsCreated', handleBookParts as any)
+    return () => {
+      window.removeEventListener('bookPartsCreated', handleBookParts as any)
+    }
+  }, [form])
 
   // Handle search result click
   useEffect(() => {
@@ -388,7 +456,7 @@ const Editor = () => {
   }, [loadDocument])
 
   return (
-    <div className="mx-4 mt-4 mb-0 max-h-[90vh] rounded-lg border bg-background shadow overflow-hidden">
+    <div className="mx-4 mt-4 mb-0 max-h-[90vh] rounded-lg border bg-background shadow ">
       <div className="flex flex-col h-full">
         <Form {...form}>
           <div className="flex items-center gap-4 px-4 py-2 border-b">

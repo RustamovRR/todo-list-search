@@ -28,6 +28,13 @@ export interface DocumentType {
   updatedAt: Date
 }
 
+export interface DocumentPart {
+  id: string
+  content: string
+  partNumber: number
+  isSaved: boolean
+}
+
 export interface SearchResultType {
   id: string
   title: string
