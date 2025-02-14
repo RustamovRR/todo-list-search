@@ -3,7 +3,7 @@ import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext
 import { $createParagraphNode, $createTextNode, $getRoot, $isRootNode } from 'lexical'
 import { DownloadIcon, LoaderIcon, UploadIcon } from 'lucide-react'
 import mammoth from 'mammoth'
-import { useState,  } from 'react'
+import { useState } from 'react'
 import { pdfjs } from 'react-pdf'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
@@ -135,7 +135,7 @@ export function ImportExportPlugin() {
         content,
         partNumber: index + 1,
         totalParts: parts.length,
-        characterCount: content.length
+        characterCount: content.length,
       }))
 
       // Editor state'ni yangilash
@@ -151,7 +151,7 @@ export function ImportExportPlugin() {
         const event = new CustomEvent('bookPartsCreated', {
           detail: {
             parts: bookParts,
-            currentPart: firstPart
+            currentPart: firstPart,
           },
         })
         window.dispatchEvent(event)
@@ -178,24 +178,19 @@ export function ImportExportPlugin() {
       setProgress(30)
 
       const editorState = editor.getEditorState()
-      const docx = new DocxDocument({
-        sections: [
-          {
-            properties: {},
-            children: [],
-          },
-        ],
-      })
+      let docxParagraphs: Paragraph[] = []
 
       editorState.read(() => {
         const root = $getRoot()
         const children = root.getChildren()
 
-        const docxParagraphs = children
+        docxParagraphs = children
           .map((node) => {
             if ($isRootNode(node)) return null
 
             const textContent = node.getTextContent()
+            if (!textContent.trim()) return null
+
             return new Paragraph({
               children: [
                 new TextRun({
@@ -205,17 +200,22 @@ export function ImportExportPlugin() {
             })
           })
           .filter(Boolean) as Paragraph[]
+      })
 
-        // Section qo'shamiz
-        docx.addSection({
-          children: docxParagraphs,
-        })
+      // Create document with sections
+      const doc = new DocxDocument({
+        sections: [
+          {
+            properties: {},
+            children: docxParagraphs,
+          },
+        ],
       })
 
       setProgress(60)
       setImportStatus('Generating DOCX file...')
 
-      const buffer = await Packer.toBuffer(docx)
+      const buffer = await Packer.toBuffer(doc)
       const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       })

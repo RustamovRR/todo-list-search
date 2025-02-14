@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { SignInForm } from '@/components/auth/signin-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -66,7 +67,9 @@ export default function AuthenticationPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <SignInForm />
+              <Suspense fallback={<div>Loading...</div>}>
+                <SignInForm />
+              </Suspense>
             </CardContent>
             {/* <CardFooter>
               <Button variant="ghost" className="w-full">
